@@ -152,46 +152,24 @@
                 </div>
 
                 <!-- User Menu -->
-                <!-- User Menu -->
-                <div class="relative group" id="userMenu">
-                    <button id="userMenuButton" class="flex items-center focus:outline-none">
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center">
                         <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center ml-2">
                             <i class="fas fa-user text-indigo-600"></i>
                         </div>
-                        <span class="text-gray-700 font-medium mr-2">{{ auth()->user()->name }}</span>
-                        <i class="fas fa-chevron-down text-gray-500 text-sm"></i>
+                        <span class="text-gray-700 font-medium">{{ auth()->user()->name }}</span>
                     </button>
 
-                    <!-- Dropdown Menu -->
-                    <div class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border hidden group-hover:block hover:block z-50">
-                        <div class="p-4 border-b">
-                            <p class="font-medium text-gray-800">{{ auth()->user()->name }}</p>
-                            <p class="text-sm text-gray-600 truncate">{{ auth()->user()->email }}</p>
-                        </div>
-
-                        <div class="py-1">
-                            <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-user-circle ml-3 text-gray-500"></i>
-                                الملف الشخصي
-                            </a>
-
-                            <a href="{{ route('settings') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-cog ml-3 text-gray-500"></i>
-                                الإعدادات
-                            </a>
-
-                            <div class="border-t my-1"></div>
-
-                            <!-- Logout Form -->
-                            <form method="POST" action="{{ route('logout') }}" id="logoutForm">
-                                @csrf
-                                <button type="submit" class="w-full text-right flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                    <i class="fas fa-sign-out-alt ml-3 text-red-500"></i>
-                                    تسجيل الخروج
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                </div>
+                <div class="relative">
+                    <!-- Logout Form -->
+                    <form method="POST" action="{{ route('logout') }}" id="logoutForm">
+                        @csrf
+                        <button type="submit" class="w-full text-right flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <i class="fas fa-sign-out-alt ml-3 text-red-500"></i>
+                            تسجيل الخروج
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

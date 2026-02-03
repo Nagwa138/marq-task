@@ -1,8 +1,8 @@
-# 💳 Order Payment Management API
+# 🏢 Smart Accountant - Multi-Company Accounting System
 
-A Laravel-based RESTful API for managing orders and payments with extensible payment gateway system using Strategy Pattern.
+A comprehensive accounting system that manages multiple companies with a tenant-based architecture, featuring complete customer, invoice, and payment management.
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -13,10 +13,10 @@ A Laravel-based RESTful API for managing orders and payments with extensible pay
 
 ### Installation
 
-1. **Clone the repository**:
+1. **Clone the project**:
 ```bash
 git clone <repository-url>
-cd order-payments-api
+cd smart-accounting-system
 ```
 
 2. **Install dependencies**:
@@ -32,351 +32,588 @@ php artisan key:generate
 
 4. **Configure database**:
    Edit `.env` file:
-```ini
-DB_CONNECTION=mysql
+```env
+DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=order_payment_api
+DB_PORT=5432
+DB_DATABASE=smart_accounting
 DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-5. **Configure payment gateways** (Optional for testing):
-```ini
-PAYMENT_DEFAULT_GATEWAY=credit_card
-STRIPE_API_KEY=sk_test_...
-STRIPE_API_SECRET=...
-PAYPAL_CLIENT_ID=...
-PAYPAL_CLIENT_SECRET=...
-PAYPAL_MODE=sandbox
-```
-
-6. **Run migrations and seeders**:
+5. **Run migrations**:
 ```bash
 php artisan migrate --seed
 ```
 
-7. **Start development server**:
+6. **Start development server**:
 ```bash
 php artisan serve
 ```
 
-Visit: http://localhost:8000/api
+Visit: http://localhost:8000
 
-or any custom port for docker users
+## 👤 Default Login Credentials
 
-## 🔐 Authentication
+After setup, use these credentials:
 
-### Test Credentials
-After seeding, use these credentials:
-- **Email:** test@example.com
+- **Email:** admin@example.com
 - **Password:** password
 
-### Get Authentication Token
-```bash
-curl -X POST http://localhost:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password"}'
+## 🏗️ System Architecture
+
+### Tenant System (Multi-Company)
+- Each tenant represents a separate client of the system
+- Each tenant has its own database (optional)
+- Complete data isolation between tenants
+
+### Companies
+- Each tenant can add multiple companies
+- Each company represents a separate accounting entity
+- Users can switch between companies within the same tenant
+
+### Core Relationships
+```
+Tenant (1) → (n) Companies
+Company (1) → (n) Customers
+Customer (1) → (n) Invoices
+Invoice (1) → (n) Payments
 ```
 
-Save the token from response for subsequent requests.
+## 📊 Key Features
 
-## 📡 API Endpoints
+### 1. Multi-Company System
+- Create and manage multiple companies
+- Complete data isolation between companies
+- Quick switching between active companies
 
-### Authentication
-- `POST /api/register` - Register new user
-- `POST /api/login` - Login user
-- `GET /api/logout` - Logout user (requires token)
+### 2. Customer Management
+- Register customers for each company
+- Track customer balances
+- Invoice and payment history
 
-### Orders
-- `GET /api/orders` - List all orders (filter by status)
-- `POST /api/orders` - Create new order
-- `GET /api/orders/{id}` - Get specific order
-- `PUT /api/orders/{id}` - Update order
-- `DELETE /api/orders/{id}` - Delete order
-- `POST /api/orders/{id}/confirm` - Confirm order
-- `POST /api/orders/{id}/cancel` - Cancel order
+### 3. Invoice System
+- Create detailed invoices
+- Add multiple invoice items
+- Automatic tax calculation
+- Invoice statuses: draft, sent, paid, overdue
 
-### Payments
-- `GET /api/payments` - List all payments (filter by status/order_id)
-- `GET /api/payments/gateways` - Get available payment gateways
-- `POST /api/orders/{id}/payments/process` - Process payment for order
+### 4. Payment System
+- Record payments
+- Track payment status
+- Link payments to invoices
+- Automatically update customer balances
 
-## 🔧 Quick Examples
+### 5. Reports & Statistics
+- Detailed statistics for each company
+- Monthly revenue reports
+- Invoice status analysis
+- Payment and balance tracking
 
-### Create Order
-```bash
-curl -X POST http://localhost:8000/api/orders \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "items": [
-      {"product": "Laptop", "quantity": 1, "price": 999.99},
-      {"product": "Mouse", "quantity": 2, "price": 25.50}
+## 🗄️ Database Structure
+
+### Main Tables
+
+#### tenants
+```sql
+id              INT (PK)
+name            VARCHAR(255)
+domain          VARCHAR(255) UNIQUE
+database        VARCHAR(255) UNIQUE
+settings        JSON
+is_active       BOOLEAN DEFAULT true
+timestamps
+```
+
+#### companies
+```sql
+id              INT (PK)
+tenant_id       INT (FK → tenants)
+name            VARCHAR(255)
+email           VARCHAR(255) UNIQUE
+phone           VARCHAR(20)
+address         TEXT
+tax_number      VARCHAR(50)
+logo            VARCHAR(255)
+timestamps
+```
+
+#### users
+```sql
+id              INT (PK)
+tenant_id       INT (FK → tenants) NULLABLE
+company_id      INT (FK → companies) NULLABLE
+name            VARCHAR(255)
+email           VARCHAR(255) UNIQUE
+password        VARCHAR(255)
+role            ENUM('admin', 'accountant', 'viewer')
+timestamps
+```
+
+#### customers
+```sql
+id              INT (PK)
+tenant_id       INT (FK → tenants)
+company_id      INT (FK → companies)
+name            VARCHAR(255)
+email           VARCHAR(255)
+phone           VARCHAR(20)
+address         TEXT
+tax_number      VARCHAR(50)
+balance         DECIMAL(15,2) DEFAULT 0
+timestamps
+```
+
+#### invoices
+```sql
+id              INT (PK)
+tenant_id       INT (FK → tenants)
+company_id      INT (FK → companies)
+customer_id     INT (FK → customers)
+invoice_number  VARCHAR(255) UNIQUE
+issue_date      DATE
+due_date        DATE
+subtotal        DECIMAL(15,2)
+tax             DECIMAL(15,2)
+total           DECIMAL(15,2)
+status          ENUM('draft', 'sent', 'paid', 'overdue')
+notes           TEXT
+timestamps
+```
+
+#### invoice_items
+```sql
+id              INT (PK)
+invoice_id      INT (FK → invoices)
+description     VARCHAR(255)
+quantity        DECIMAL(10,2)
+unit_price      DECIMAL(15,2)
+total           DECIMAL(15,2)
+timestamps
+```
+
+#### payments
+```sql
+id              INT (PK)
+tenant_id       INT (FK → tenants)
+invoice_id      INT (FK → invoices)
+customer_id     INT (FK → customers)
+amount          DECIMAL(15,2)
+payment_date    DATE
+payment_method  ENUM('cash', 'bank_transfer', 'credit_card', 'check')
+reference       VARCHAR(255)
+notes           TEXT
+timestamps
+```
+
+## 🎨 User Interface
+
+### Design Overview
+- Fully Arabic interface (RTL support)
+- Modern design using Tailwind CSS
+- Responsive for all devices
+- Unified color scheme (Indigo)
+
+### Main Sections
+
+#### 1. Dashboard
+- General statistics
+- Active companies
+- Recent activities
+- Charts and graphs
+
+#### 2. Company Management
+- Companies list
+- Add new company
+- Company details
+- Switch between companies
+
+#### 3. Customer Management
+- Customer records
+- Add new customer
+- Customer details
+- Customer invoices
+
+#### 4. Invoice Management
+- Create new invoices
+- Invoices list
+- Invoice details
+- Download invoices as PDF
+
+#### 5. Payment Management
+- Record payments
+- Payment history
+- Link payments to invoices
+
+## 🔧 Technical Architecture
+
+### Design Patterns Used
+
+#### 1. Repository Pattern
+```php
+// Each model has its own repository
+App\Architecture\Repositories\CustomerRepository
+App\Architecture\Repositories\CompanyRepository
+App\Architecture\Repositories\InvoiceRepository
+```
+
+#### 2. Service Pattern
+```php
+// Business logic separation
+App\Architecture\Services\CustomerService
+App\Architecture\Services\CompanyService
+App\Architecture\Services\StatisticsService
+```
+
+#### 3. Abstract Repository
+```php
+// Common base for all Repositories
+App\Architecture\Repositories\AbstractRepository
+```
+
+### Core Structure
+
+```
+app/
+├── Architecture/
+│   ├── Repositories/
+│   │   ├── AbstractRepository.php     # Common base
+│   │   ├── Interfaces/               # Repository interfaces
+│   │   │   ├── ICompanyRepository.php
+│   │   │   ├── ICustomerRepository.php
+│   │   │   └── IInvoiceRepository.php
+│   │   └── Classes/                  # Repository implementations
+│   │       ├── CompanyRepository.php
+│   │       ├── CustomerRepository.php
+│   │       └── InvoiceRepository.php
+│   ├── Services/
+│   │   ├── Interfaces/               # Service interfaces
+│   │   │   ├── ICompanyService.php
+│   │   │   ├── ICustomerService.php
+│   │   │   └── IStatisticsService.php
+│   │   └── Classes/                  # Service implementations
+│   │       ├── CompanyService.php
+│   │       ├── CustomerService.php
+│   │       └── StatisticsService.php
+│   └── Responder/                    # Response management
+├── Enums/                           # Type-safe enums
+├── Http/
+│   ├── Controllers/
+│   │   ├── DashboardController.php   # Dashboard
+│   │   ├── CompanyController.php     # Companies
+│   │   ├── CustomerController.php    # Customers
+│   │   ├── InvoiceController.php     # Invoices
+│   │   └── PaymentController.php     # Payments
+│   ├── Requests/                     # Form requests
+│   │   ├── Customer/
+│   │   │   ├── StoreCustomerRequest.php
+│   │   │   └── UpdateCustomerRequest.php
+│   │   └── Company/
+│   │       ├── StoreCompanyRequest.php
+│   │       └── UpdateCompanyRequest.php
+│   └── Resources/                    # API resources
+└── Models/                          # Models
+    ├── Tenant.php
+    ├── Company.php
+    ├── Customer.php
+    ├── Invoice.php
+    ├── InvoiceItem.php
+    └── Payment.php
+```
+
+## 🚦 How to Use
+
+### 1. User Login
+```php
+// User login with email and password
+// Store tenant_id in session
+session(['tenant_id' => auth()->user()->tenant_id]);
+```
+
+### 2. Add New Company
+```php
+// Add company linked to tenant
+$company = Company::create([
+    'tenant_id' => auth()->user()->tenant_id,
+    'name' => 'Company Name',
+    'email' => 'company@example.com',
+    // ... other data
+]);
+```
+
+### 3. Switch Between Companies
+```php
+// Store active company in session
+session(['active_company_id' => $companyId]);
+
+// Fetch data based on active company
+$customers = Customer::where('company_id', session('active_company_id'))->get();
+```
+
+### 4. Create Invoice
+```php
+// Create new invoice
+$invoice = Invoice::create([
+    'tenant_id' => auth()->user()->tenant_id,
+    'company_id' => session('active_company_id'),
+    'customer_id' => $customerId,
+    'invoice_number' => 'INV-2024-001',
+    // ... invoice data
+]);
+
+// Add invoice items
+$invoice->items()->create([
+    'description' => 'Item description',
+    'quantity' => 1,
+    'unit_price' => 100,
+    'total' => 100
+]);
+
+// Update customer balance
+$customer->increment('balance', $invoice->total);
+```
+
+## ⚙️ Configuration
+
+### Environment File (.env)
+```env
+APP_NAME="Smart Accountant"
+APP_ENV=local
+APP_KEY=base64:...
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=smart_accounting
+DB_USERNAME=root
+DB_PASSWORD=
+
+TENANCY_DB_SEPARATE=false  # Separate database for each tenant
+```
+
+### Tenancy Configuration (config/tenancy.php)
+```php
+return [
+    'enabled' => env('TENANCY_ENABLED', false),
+    
+    'tenant_model' => \App\Models\Tenant::class,
+    
+    'domains' => [
+        'central' => env('CENTRAL_DOMAIN', 'localhost'),
     ],
-    "notes": "Please deliver before 5 PM"
-  }'
+    
+    'database' => [
+        'separate_databases' => env('TENANCY_DB_SEPARATE', false),
+        'prefix' => 'tenant_',
+    ],
+];
 ```
 
-### Process Payment
-```bash
-curl -X POST http://localhost:8000/api/orders/1/payments/process \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "method": "credit_card",
-    "gateway_data": {
-      "card_number": "4111111111111111",
-      "card_holder": "John Doe",
-      "expiry_month": 12,
-      "expiry_year": 2025,
-      "cvv": "123"
-    }
-  }'
+## 🔐 Permission System
+
+### User Roles
+1. **System Administrator (Admin)**
+    - Manage all companies
+    - Create new users
+    - Full permissions
+
+2. **Accountant**
+    - Manage assigned companies
+    - Create invoices and payments
+    - Manage customers
+
+3. **Viewer**
+    - View reports only
+    - No edit permissions
+
+### Authorization Policies
+```php
+// Company policy
+public function view(User $user, Company $company)
+{
+    return $user->tenant_id === $company->tenant_id;
+}
+
+// Customer policy
+public function update(User $user, Customer $customer)
+{
+    return $user->tenant_id === $customer->tenant_id 
+        && $user->company_id === $customer->company_id;
+}
 ```
 
-### Get Available Gateways
-```bash
-curl -X GET http://localhost:8000/api/payments/gateways \
-  -H "Authorization: Bearer YOUR_TOKEN"
+## 📈 Statistics & Reports
+
+### General Statistics
+- Active companies count
+- Total customers
+- Total invoices
+- Monthly revenue
+- Overdue invoices
+
+### Available Reports
+1. **Monthly Sales Report**
+2. **Customer Balances Report**
+3. **Invoice Status Report**
+4. **Payments Report**
+
+## 🔄 API Endpoints
+
+### Companies
+```
+GET    /api/companies          # List companies
+POST   /api/companies          # Create company
+GET    /api/companies/{id}     # Company details
+PUT    /api/companies/{id}     # Update company
+DELETE /api/companies/{id}     # Delete company
+POST   /api/company/switch     # Switch active company
 ```
 
-## 🛠 Development
+### Customers
+```
+GET    /api/customers          # List customers
+POST   /api/customers          # Create customer
+GET    /api/customers/{id}     # Customer details
+PUT    /api/customers/{id}     # Update customer
+DELETE /api/customers/{id}     # Delete customer
+GET    /api/customers/search   # Search customers
+```
 
-### Running Tests
+### Invoices
+```
+GET    /api/invoices           # List invoices
+POST   /api/invoices           # Create invoice
+GET    /api/invoices/{id}      # Invoice details
+PUT    /api/invoices/{id}      # Update invoice
+DELETE /api/invoices/{id}      # Delete invoice
+POST   /api/invoices/{id}/send # Send invoice
+GET    /api/invoices/{id}/pdf  # Download PDF
+```
+
+## 🧪 Testing
+
 ```bash
 # Run all tests
 php artisan test
 
-# Run specific test
-php artisan test --filter PaymentTest
+# Company tests
+php artisan test --filter CompanyTest
 
-# Run with coverage
+# Customer tests
+php artisan test --filter CustomerTest
+
+# Invoice tests
+php artisan test --filter InvoiceTest
+
+# With coverage
 php artisan test --coverage
 ```
 
-### Environment Variables
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `PAYMENT_DEFAULT_GATEWAY` | Default payment gateway | `credit_card` | Yes |
-| `PAYMENT_ENABLED_GATEWAYS` | Comma-separated enabled gateways | `credit_card,paypal` | No |
-| `STRIPE_API_KEY` | Stripe API key | - | For Stripe |
-| `STRIPE_API_SECRET` | Stripe API secret | - | For Stripe |
-| `PAYPAL_CLIENT_ID` | PayPal client ID | - | For PayPal |
-| `PAYPAL_CLIENT_SECRET` | PayPal client secret | - | For PayPal |
-| `PAYPAL_MODE` | PayPal mode | `sandbox` | For PayPal |
+## 🚀 Deployment
 
-## 🔌 Adding New Payment Gateway
+### Basic Setup
+```bash
+# Setup project
+composer install --optimize-autoloader --no-dev
 
-### Step 1: Add to Enum
-Edit `App\Enums\PaymentGatewayTypes`:
-```php
-case NEW_GATEWAY = 'new_gateway';
+# Setup storage
+php artisan storage:link
+
+# Build assets
+npm run build
+
+# Cache optimization
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 ```
 
-### Step 2: Create Gateway Class
-Create `App\Architecture\Services\Payment\Gateways\NewGatewayGateway.php`:
-```php
-namespace App\Architecture\Services\Payment\Gateways;
+### Database Setup
+```bash
+# Create database
+mysql -u root -p -e "CREATE DATABASE smart_accounting CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-use App\Architecture\Services\Payment\Contracts\IPaymentGateway;
-use App\Enums\PaymentGatewayTypes;
+# Run migrations
+php artisan migrate --force
 
-class NewGatewayGateway implements IPaymentGateway
-{
-    protected PaymentGatewayTypes $gatewayType = PaymentGatewayTypes::NEW_GATEWAY;
-    
-    public function charge(float $amount, array $options = []): array
-    {
-        // Your gateway logic here
-        return [
-            'success' => true,
-            'transaction_id' => 'txn_' . uniqid(),
-            'message' => 'Payment processed successfully',
-        ];
-    }
-    
-    // Implement other required methods...
-}
-```
-
-### Step 3: Add Configuration
-Edit `config/payment.php`:
-```php
-'new_gateway' => [
-    'api_key' => env('NEW_GATEWAY_API_KEY'),
-    'validation_rules' => [
-        'custom_field' => ['required', 'string'],
-    ],
-],
-```
-
-### Step 4: Enable Gateway
-Add to enabled gateways in `config/payment.php`:
-```php
-'enabled_gateways' => [
-    'credit_card',
-    'paypal',
-    'new_gateway',
-],
-```
-
-**That's it!** Your gateway is now available.
-
-## 📊 Available Gateways
-
-### 1. Credit Card Gateway
-- **Method:** `credit_card`
-- **Supports Refund:** ✅ Yes
-- **Required Fields:**
-    - `card_number` (16 digits)
-    - `card_holder` (name)
-    - `expiry_month` (1-12)
-    - `expiry_year` (current or future)
-    - `cvv` (3-4 digits)
-
-### 2. PayPal Gateway
-- **Method:** `paypal`
-- **Supports Refund:** ✅ Yes
-- **Required Fields:**
-    - `payer_email` (valid email)
-
-### 3. Bank Transfer
-- **Method:** `bank_transfer`
-- **Supports Refund:** ❌ No
-- **No Required Fields:**
-
-## ⚖️ Business Rules
-
-### Order Rules
-✅ **Allowed:**
-- Only confirmed orders can process payments
-- Only pending orders can be confirmed/cancelled
-- Orders can be updated unless they have payments
-
-❌ **Restricted:**
-- Cannot delete order with payments
-- Cannot update order status after payment
-- Cannot process payment for already paid order
-
-### Payment Rules
-✅ **Allowed:**
-- Multiple payment attempts (with rate limiting)
-- Different payment methods per order
-
-❌ **Restricted:**
-- 5-minute cool-off between payment attempts
-- Gateway-specific validation rules apply
-
-## 📂 Project Structure
-```
-app/
-├── Architecture/
-│   ├── Repositories/     # Data access layer (Repository Pattern)
-│   ├── Services/         # Business logic layer
-│   │   └── Payment/      # Payment gateway implementations
-│   └── Responder/        # API response formatting
-├── Enums/                # Type-safe enums (PaymentGatewayTypes)
-├── Http/
-│   ├── Controllers/      # API controllers
-│   ├── Requests/         # Form validation rules
-│   └── Resources/        # API resource transformers
-├── Models/               # Eloquent models (Order, Payment, User)
-├── Policies/             # Authorization policies
-└── Services/             # Business services (OrderService, PaymentService)
-config/                   # Configuration files
-database/
-├── factories/            # Model factories  
-├── migrations/           # Database migrations
-├── seeders/              # Data seeders
-routes/                   # API route definitions
-tests/                    # Feature and unit tests
-```
-
-## 🗄️ Database Schema
-
-### Orders Table
-```sql
-id              INT (PK)
-user_id         INT (FK → users)
-order_number    VARCHAR(255) UNIQUE
-status          ENUM('pending', 'confirmed', 'cancelled')
-total_amount    DECIMAL(10,2)
-items           JSON
-notes           TEXT NULLABLE
-timestamps
-```
-
-### Payments Table
-```sql
-id              INT (PK)
-payment_id      VARCHAR(255) UNIQUE
-order_id        INT (FK → orders)
-status          ENUM('pending', 'successful', 'failed')
-method          VARCHAR(50)  -- payments gateway type
-amount          DECIMAL(10,2)
-gateway_response JSON NULLABLE
-gateway_metadata JSON NULLABLE
-timestamps
+# Seed data (optional)
+php artisan db:seed --force
 ```
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **"Payment gateway not supported" error**
-    - Check `config/payment.php` enabled gateways
-    - Verify gateway is in `PaymentGatewayTypes` enum
+1. **Tenant Error**
+```bash
+# Check tenant_id in session
+dd(session('tenant_id'));
 
-2. **"Order not found" error**
-    - Ensure order belongs to authenticated user
-    - Check order ID exists in database
+# Check user tenant association
+dd(auth()->user()->tenant_id);
+```
 
-3. **"Cannot process payment" error**
-    - Verify order status is 'confirmed'
-    - Check no successful payment exists for order
+2. **Active Company Error**
+```bash
+# Activate company
+session(['active_company_id' => $companyId]);
 
-4. **Validation errors**
-    - Review required fields for selected gateway
-    - Check data format matches validation rules
+# Verify active company
+dd(session('active_company_id'));
+```
+
+3. **Relationship Errors**
+```bash
+# Verify model relationships
+$customer->load('company', 'invoices', 'payments');
+
+# Check queries
+\DB::enableQueryLog();
+// Your queries
+dd(\DB::getQueryLog());
+```
 
 ### Debug Mode
-Enable debug in `.env`:
-```ini
+```env
 APP_DEBUG=true
 APP_ENV=local
 ```
 
-Check logs:
+View logs:
 ```bash
 tail -f storage/logs/laravel.log
 ```
 
-## 🚀 Deployment
+## 📱 Future Development
 
-1. **Set production environment**:
-```bash
-APP_ENV=production
-APP_DEBUG=false
-```
+### Planned Features
+1. **Inventory System**
+2. **Bank Integration**
+3. **Advanced Reports**
+4. **Full API**
+5. **Mobile App**
+6. **Budgeting System**
+7. **Financial Analysis**
 
-2. **Optimize for production**:
-```bash
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
+### Potential Integrations
+1. **Payment Gateways** (PayPal, Stripe)
+2. **Accounting Systems** (QuickBooks, Zoho Books)
+3. **ERP Systems** (Odoo, ERPNext)
+4. **E-commerce Platforms**
 
-## 📜 License
+## 📄 License
 
-This project is for assessment purposes.
+This project is for assessment and educational purposes.
 
-## 📧 Contact
+## 📞 Support & Contact
 
-Project Maintainer - Nagwa Ali (nnnnali123@gmail.com)
+For questions and support:
+- **Developer:** Nagwa Ali
+- **Email:** nnnnali123@gmail.com
+- **Created:** 2026
 
 ---
 
-**Need Help?** Check the full API documentation in `swagger.yaml` or create an issue in the repository.
-
-Happy Coding! 💻✨
+**Happy to serve you!** 🌟

@@ -42,8 +42,9 @@ class CompanyController extends Controller
     public function show(int $id): View
     {
         $company = $this->companyService->show($id);
+        $companies = $this->companyService->all();
 
-        return view('companies.show', compact('company'));
+        return view('companies.show', compact('company', 'companies'));
     }
 
     public function edit(int $id): View

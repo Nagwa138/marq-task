@@ -7,7 +7,7 @@
 @section('actions')
     <div class="flex space-x-3 space-x-reverse">
         @if($company->id != session('active_company_id'))
-            <button class="text-gray-400 hover:text-indigo-600 switch-company-btn"
+            <button class=" bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 switch-company-btn"
                     data-company-id="{{ $company->id }}">
                 تفعيل الشركه
             </button>
