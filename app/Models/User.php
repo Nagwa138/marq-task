@@ -2,57 +2,94 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'tenant_id',
+        'company_id',
+        'role',
+        'phone',
+        'avatar',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
-        'email_verified_at',
-        'created_at',
-        'updated_at'
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    protected static function boot()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->role)) {
+                $user->role = 'accountant';
+            }
+        });
     }
 
-    public function stockTransfers()
+    /**
+     * العلاقة مع Tenant
+     */
+    public function tenant()
     {
-        return $this->hasMany(StockTransfer::class);
+        return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * العلاقة مع Company
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * التحقق إذا كان المستخدم مدير
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * التحقق إذا كان المستخدم محاسب
+     */
+    public function isAccountant(): bool
+    {
+        return $this->role === 'accountant';
+    }
+
+    /**
+     * التحقق إذا كان المستخدم مشاهد فقط
+     */
+    public function isViewer(): bool
+    {
+        return $this->role === 'viewer';
+    }
+
+    /**
+     * Scope للمستخدمين النشطين
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereHas('tenant', function ($q) {
+            $q->where('is_active', true);
+        });
     }
 }

@@ -28,25 +28,5 @@ class UserSeeder extends Seeder
             'email' => 'clerk@inventory.test',
             'password' => bcrypt('password'),
         ]);
-
-
-        // Create 3 users
-        $users = User::factory(3)->create();
-
-        foreach ($users as $user) {
-            // Create 2 orders for each user
-            $orders = Order::factory(2)->create([
-                'user_id' => $user->id,
-            ]);
-
-            foreach ($orders as $order) {
-                // Create 1 payment for each order
-                Payment::factory()->create([
-                    'order_id' => $order->id,
-                    'amount' => $order->total_amount,
-                ]);
-            }
-        }
-
     }
 }

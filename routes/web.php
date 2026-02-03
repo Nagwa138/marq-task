@@ -1,21 +1,36 @@
 <?php
 
-use App\Http\Controllers\PostController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
+
+Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
+
+// Routes العامة (بدون tenant)
+Route::middleware('guest')->group(function () {
+    Route::get('/register/company', [CompanyController::class, 'create'])->name('register.company');
+    Route::post('/register/company', [CompanyController::class, 'store']);
 });
 
-Auth::routes();
+// Routes محمية بالمستأجر
+Route::middleware(['auth', 'tenant'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+    // العملاء
+    Route::resource('customers', CustomerController::class);
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('posts/create', [PostController::class, 'create'])->name('posts.create');
-    Route::post('posts', [PostController::class, 'store'])->name('posts.store');
-    Route::resource('platforms', \App\Http\Controllers\API\InventoryItemController::class);
-    Route::get('posts/show', [PostController::class, 'listScheduled']);
-    Route::get('settings/platforms', [PostController::class, 'setting'])->name('settings.platforms');
-    Route::post('settings/platforms/{platform}/toggle', [PostController::class, 'togglePlatform'] )->name('platforms.toggle');
+    // الفواتير
+    Route::resource('invoices', InvoiceController::class);
+    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
+    Route::post('/invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
+
+    // المدفوعات
+    Route::resource('payments', PaymentController::class);
 });
+
+require __DIR__.'/auth.php';

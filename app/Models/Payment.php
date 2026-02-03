@@ -2,59 +2,132 @@
 
 namespace App\Models;
 
-use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\BelongsToTenant;
 
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
-    /** @use HasFactory<PaymentFactory> */
-
-    protected $table = 'payments';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'payment_id',
-        'order_id',
-        'status',
-        'method',
+        'tenant_id',
+        'invoice_id',
+        'customer_id',
         'amount',
-        'gateway_response',
-        'gateway_metadata',
+        'payment_date',
+        'payment_method',
+        'reference',
+        'notes',
+        'status',
+        'received_by',
+        'bank_name',
+        'check_number',
+        'transaction_id',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'amount' => 'decimal:2',
-        'gateway_response' => 'array',
-        'gateway_metadata' => 'array',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'payment_date' => 'date',
     ];
 
-    /**
-     * Payment status constants.
-     */
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_SUCCESSFUL = 'successful';
-    public const STATUS_FAILED = 'failed';
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($payment) {
+            if (empty($payment->payment_date)) {
+                $payment->payment_date = now();
+            }
+
+            if (empty($payment->status)) {
+                $payment->status = 'completed';
+            }
+
+            // توليد رقم مرجعي
+            if (empty($payment->reference)) {
+                $payment->reference = 'PAY-' . strtoupper(uniqid());
+            }
+        });
+
+        static::created(function ($payment) {
+            // تحديث رصيد العميل
+            $payment->customer?->updateBalance();
+
+            // تحديث حالة الفاتورة إذا تم دفعها بالكامل
+            $payment->invoice?->refresh();
+            if ($payment->invoice?->isFullyPaid()) {
+                $payment->invoice->markAsPaid();
+            }
+        });
+
+        static::deleted(function ($payment) {
+            // تحديث الرصيد عند حذف الدفعة
+            $payment->customer?->updateBalance();
+        });
+    }
 
     /**
-     * Get the order that owns the payment.
+     * العلاقة مع الفاتورة
      */
-    public function order(): BelongsTo
+    public function invoice()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Invoice::class);
+    }
+
+    /**
+     * العلاقة مع العميل
+     */
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * العلاقة مع المستخدم الذي استلم الدفعة
+     */
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    /**
+     * Scope للمدفوعات الناجحة
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Scope للمدفوعات الفاشلة
+     */
+    public function scopeFailed($query)
+    {
+        return $query->where('status', 'failed');
+    }
+
+    /**
+     * Scope للمدفوعات المعلقة
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    /**
+     * الحصول على اسم طريقة الدفع
+     */
+    public function getPaymentMethodNameAttribute(): string
+    {
+        $methods = [
+            'cash' => 'نقدي',
+            'bank_transfer' => 'تحويل بنكي',
+            'credit_card' => 'بطاقة ائتمان',
+            'check' => 'شيك',
+            'online' => 'دفع إلكتروني',
+        ];
+
+        return $methods[$this->payment_method] ?? $this->payment_method;
     }
 }
