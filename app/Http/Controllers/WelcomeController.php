@@ -19,14 +19,6 @@ class WelcomeController extends Controller
     }
 
     /**
-     * عرض نموذج تسجيل شركة جديدة
-     */
-    public function showCompanyRegistration()
-    {
-        return view('auth.register-company');
-    }
-
-    /**
      * تسجيل شركة جديدة
      */
     public function registerCompany(Request $request)
@@ -47,18 +39,11 @@ class WelcomeController extends Controller
 
         try {
             // 1. إنشاء Tenant (المستأجر)
+
             $tenant = Tenant::create([
                 'name' => $validated['company_name'],
-                'company_name' => $validated['company_name'],
                 'domain' => $validated['domain'],
                 'database' => 'tenant_' . strtolower(str_replace([' ', '-'], '_', $validated['domain'])),
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'address' => $validated['address'],
-                'tax_number' => $validated['tax_number'],
-                'tax_rate' => 15.00, // نسبة الضريبة الافتراضية
-                'currency' => 'SAR',
-                'language' => 'ar',
                 'is_active' => true,
             ]);
 
@@ -69,7 +54,7 @@ class WelcomeController extends Controller
                 'password' => Hash::make($validated['password']),
                 'tenant_id' => $tenant->id,
                 'role' => 'admin',
-                'phone' => $validated['phone'],
+//                'phone' => $validated['phone'],
             ]);
 
             DB::commit();

@@ -16,7 +16,7 @@ A Laravel-based RESTful API for managing orders and payments with extensible pay
 1. **Clone the repository**:
 ```bash
 git clone <repository-url>
-cd order-payment-api
+cd order-payments-api
 ```
 
 2. **Install dependencies**:
@@ -313,7 +313,7 @@ id              INT (PK)
 payment_id      VARCHAR(255) UNIQUE
 order_id        INT (FK → orders)
 status          ENUM('pending', 'successful', 'failed')
-method          VARCHAR(50)  -- payment gateway type
+method          VARCHAR(50)  -- payments gateway type
 amount          DECIMAL(10,2)
 gateway_response JSON NULLABLE
 gateway_metadata JSON NULLABLE

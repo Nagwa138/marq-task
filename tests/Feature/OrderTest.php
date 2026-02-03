@@ -163,7 +163,7 @@ class OrderTest extends TestCase
     {
         $order = Order::factory()->create(['user_id' => $this->user->id]);
 
-        // Create a payment for the order
+        // Create a payments for the order
         \App\Models\Payment::factory()->create(['order_id' => $order->id]);
 
         $response = $this->withHeaders([
@@ -172,7 +172,7 @@ class OrderTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJson([
-                'message' => 'Cannot update order status after payment has been processed',
+                'message' => 'Cannot update order status after payments has been processed',
             ]);
     }
 
@@ -272,7 +272,7 @@ class OrderTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJson([
-                'message' => 'Cannot delete order after payment has been processed',
+                'message' => 'Cannot delete order after payments has been processed',
             ]);
     }
 

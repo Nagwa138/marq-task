@@ -130,7 +130,7 @@ class PaymentGatewayTest extends TestCase
     public function test_payment_gateway_types_enabled_method_filters_correctly(): void
     {
         // Set config
-        config(['payment.enabled_gateways' => ['credit_card', 'paypal']]);
+        config(['payments.enabled_gateways' => ['credit_card', 'paypal']]);
 
         $enabledGateways = PaymentGatewayTypes::enabled();
 

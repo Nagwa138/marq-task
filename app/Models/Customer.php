@@ -4,29 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class Customer extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
-        'tenant_id',
+        'company_id',
         'name',
         'email',
         'phone',
         'address',
         'tax_number',
-        'type', // individual, company
         'balance',
-        'credit_limit',
-        'payment_terms',
-        'notes',
+        'type',
     ];
 
     protected $casts = [
         'balance' => 'decimal:2',
-        'credit_limit' => 'decimal:2',
     ];
 
     protected static function boot()
@@ -99,5 +94,17 @@ class Customer extends Model
                 $q->where('due_date', '<', now())
                     ->where('status', '!=', 'paid');
             });
+    }
+
+    // Accessor for invoices count
+    public function getInvoicesCountAttribute()
+    {
+        return $this->invoices()->count();
+    }
+
+    // Accessor for paid invoices count
+    public function getPaidInvoicesCountAttribute()
+    {
+        return $this->invoices()->where('status', 'paid')->count();
     }
 }

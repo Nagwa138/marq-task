@@ -1,32 +1,71 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Company;
+use App\Architecture\Services\Interfaces\ICompanyService;
+use App\Http\Requests\Company\CompanyStoreRequest;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class CompanyController extends Controller
 {
-    public function store(Request $request)
+    public function __construct(
+        private readonly ICompanyService $companyService
+    ) {}
+
+    public function index(Request $request): View
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:companies',
-            'phone' => 'nullable|string',
-            'address' => 'nullable|string',
-            'tax_number' => 'nullable|string',
-        ]);
+        $filters = $request->only(['search', 'status']);
+        $companies = $this->companyService->all($filters);
+        $paginatedCompanies = $this->companyService->paginate($filters);
+        $stats = $this->companyService->getStats();
 
-        $company = Company::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'tax_number' => $request->tax_number,
-            'tenant_id' => auth()->user()->tenant_id,
-        ]);
+        return view('companies.index', compact('companies', 'stats', 'paginatedCompanies'));
+    }
 
-        auth()->user()->update(['company_id' => $company->id]);
+    public function create(): View
+    {
+        return view('companies.create');
+    }
 
-        return redirect()->route('dashboard');
+    public function store(CompanyStoreRequest $request): RedirectResponse
+    {
+        $company = $this->companyService->create($request->safe()->toArray());
+
+        return redirect()
+            ->route('companies.show', $company)
+            ->with('success', 'تم إنشاء الشركة بنجاح');
+    }
+
+    public function show(int $id): View
+    {
+        $company = $this->companyService->show($id);
+
+        return view('companies.show', compact('company'));
+    }
+
+    public function edit(int $id): View
+    {
+        $company = $this->companyService->show($id);
+
+        return view('companies.edit', compact('company'));
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $this->companyService->delete($id);
+
+        return redirect()
+            ->route('companies.index')
+            ->with('success', 'تم حذف الشركة بنجاح');
+    }
+
+    public function deleteLogo(int $id): RedirectResponse
+    {
+        $this->companyService->deleteLogo($id);
+
+        return back()->with('success', 'تم حذف الشعار بنجاح');
     }
 }

@@ -212,7 +212,7 @@ class PaymentTest extends TestCase
 
     public function test_cannot_process_payment_for_order_with_successful_payment(): void
     {
-        // Create a successful payment for the order
+        // Create a successful payments for the order
         Payment::factory()->create([
             'order_id' => $this->confirmedOrder->id,
             'status' => 'successful',
@@ -236,7 +236,7 @@ class PaymentTest extends TestCase
 
     public function test_prevents_duplicate_payment_attempts(): void
     {
-        // First payment attempt
+        // First payments attempt
         $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson("/api/orders/{$this->confirmedOrder->id}/payments/process", [
@@ -250,7 +250,7 @@ class PaymentTest extends TestCase
             ],
         ]);
 
-        // Immediately try second payment
+        // Immediately try second payments
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
         ])->postJson("/api/orders/{$this->confirmedOrder->id}/payments/process", [
@@ -294,7 +294,7 @@ class PaymentTest extends TestCase
 
     public function test_paypal_payment_requires_payer_email(): void
     {
-        config(['payment.enabled_gateways' => ['paypal']]);
+        config(['payments.enabled_gateways' => ['paypal']]);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token,

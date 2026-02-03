@@ -71,7 +71,7 @@
                 <a href="{{ route('login') }}" class="text-gray-700 hover:text-indigo-600">
                     <i class="fas fa-sign-in-alt ml-1"></i> تسجيل الدخول
                 </a>
-                <a href="{{ route('register.company.form') }}"
+                <a href="{{ route('register') }}"
                    class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition duration-300">
                     <i class="fas fa-building ml-1"></i> سجل شركتك مجاناً
                 </a>
@@ -90,7 +90,7 @@
             أدر فواتيرك، عملاءك، ومدفوعاتك بكل سهولة مع نظام محاسبي متعدد المستأجرين
         </p>
         <div class="flex flex-col md:flex-row justify-center gap-4">
-            <a href="{{ route('register.company.form') }}"
+            <a href="{{ route('register') }}"
                class="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition duration-300">
                 <i class="fas fa-rocket ml-2"></i> ابدأ مجاناً
             </a>
@@ -232,7 +232,7 @@
         <p class="text-xl mb-8 opacity-90">
             انضم إلى الآلاف من الشركات التي تستخدم نظام المحاسب الذكي لإدارة أعمالها المالية
         </p>
-        <a href="{{ route('register.company.form') }}"
+        <a href="{{ route('register') }}"
            class="bg-white text-indigo-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition duration-300 inline-block">
             <i class="fas fa-check-circle ml-2"></i> ابدأ مجاناً الآن
         </a>

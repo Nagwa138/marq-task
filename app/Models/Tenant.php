@@ -69,8 +69,8 @@ class Tenant extends Model
     /**
      * الحصول على الإعدادات
      */
-    public function getSetting(string $key, $default = null)
-    {
-        return data_get($this->settings, $key, $default);
-    }
+//    public function getSetting(string $key, $default = null)
+//    {
+//        return data_get($this->settings, $key, $default);
+//    }
 }

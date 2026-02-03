@@ -18,18 +18,14 @@ class Company extends Model
         'address',
         'tax_number',
         'logo',
-        'website',
-        'contact_person',
-        'contact_email',
-        'contact_phone',
     ];
 
     /**
      * العلاقة مع المستخدمين
      */
-    public function users()
+    public function customers()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Customer::class);
     }
 
     /**
