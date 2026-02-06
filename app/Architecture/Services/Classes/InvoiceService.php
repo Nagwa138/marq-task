@@ -67,7 +67,7 @@ class InvoiceService implements IInvoiceService
             }
 
             // Calculate tax
-            $taxRate = $data['tax_rate'] ?? config('app.default_tax_rate', 15);
+            $taxRate = config('app.default_tax', 15);
             $tax = ($subtotal * $taxRate) / 100;
 
             // Calculate total
@@ -82,7 +82,6 @@ class InvoiceService implements IInvoiceService
                 'due_date' => $data['due_date'] ?? now()->addDays(30),
                 'subtotal' => $subtotal,
                 'tax' => $tax,
-                'tax_rate' => $taxRate,
                 'total' => $total,
                 'status' => $data['status'] ?? 'draft',
                 'notes' => $data['notes'] ?? null,

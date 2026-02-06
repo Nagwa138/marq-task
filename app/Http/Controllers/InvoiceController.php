@@ -60,7 +60,6 @@ class InvoiceController extends Controller
             'invoice_number' => 'required|string|max:50|unique:invoices,invoice_number',
             'issue_date' => 'required|date',
             'due_date' => 'required|date|after:issue_date',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
             'status' => 'in:draft,sent,paid,overdue',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
