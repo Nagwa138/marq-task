@@ -22,9 +22,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     {
         $query = $this->model->query();
 
-        // Apply tenant filter
-        $query->where('tenant_id', $this->getTenantId());
-
         // Apply other filters
         $this->applyFilters($query, $conditions);
 
@@ -79,7 +76,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function getByCompany(int $companyId, array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
         $query = $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->where('company_id', $companyId);
 
         $this->applyFilters($query, $filters);
@@ -94,7 +90,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function getWithOverdueInvoices(array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
         $query = $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->whereHas('invoices', function ($q) {
                 $q->where('status', 'overdue');
             });
@@ -117,7 +112,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function search(string $queryString, int $limit = 10): \Illuminate\Database\Eloquent\Collection
     {
         return $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->where(function ($query) use ($queryString) {
                 $query->where('name', 'like', "%{$queryString}%")
                     ->orWhere('email', 'like', "%{$queryString}%")
@@ -133,7 +127,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function getWithPositiveBalance(array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
         $query = $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->where('balance', '>', 0);
 
         $this->applyFilters($query, $filters);
@@ -148,7 +141,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function getWithNegativeBalance(array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
         $query = $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->where('balance', '<', 0);
 
         $this->applyFilters($query, $filters);
@@ -163,7 +155,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function getRecent(int $limit = 10): \Illuminate\Database\Eloquent\Collection
     {
         return $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->with('company')
             ->latest()
             ->limit($limit)
@@ -237,7 +228,7 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
      */
     public function all(array $conditions = []): \Illuminate\Database\Eloquent\Collection
     {
-        $query = $this->model->where('tenant_id', $this->getTenantId());
+        $query = $this->prepareQuery();
         $this->applyFilters($query, $conditions);
         return $query->get();
     }
@@ -245,29 +236,24 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function find(int $id)
     {
         return $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->find($id);
     }
 
     public function findOrFail(int $id)
     {
         return $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->findOrFail($id);
     }
 
     public function first(array $conditions = [])
     {
-        $query = $this->model->where('tenant_id', $this->getTenantId());
+        $query = $this->prepareQuery();
         $this->applyFilters($query, $conditions);
         return $query->first();
     }
 
     public function create(array $data): \Illuminate\Database\Eloquent\Model
     {
-        // Add tenant_id automatically
-        $data['tenant_id'] = $this->getTenantId();
-
         // Add active company if not specified
         if (!isset($data['company_id'])) {
             $activeCompanyId = session('active_company_id');
@@ -288,7 +274,7 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
 
     public function exists(array $conditions = []): bool
     {
-        $query = $this->model->where('tenant_id', $this->getTenantId());
+        $query = $this->prepareQuery();
         $this->applyFilters($query, $conditions);
         return $query->exists();
     }
@@ -298,7 +284,7 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
      */
     public function getStats(): array
     {
-        $query = $this->model->where('tenant_id', $this->getTenantId());
+        $query = $this->prepareQuery();
 
         // Apply active company filter if exists
         $activeCompanyId = session('active_company_id');
@@ -344,7 +330,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function getTopCustomersByBalance(int $limit = 10): \Illuminate\Database\Eloquent\Collection
     {
         return $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->where('balance', '!=', 0)
             ->orderByRaw('ABS(balance) DESC')
             ->limit($limit)
