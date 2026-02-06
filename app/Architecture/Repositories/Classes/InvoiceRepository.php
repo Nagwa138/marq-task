@@ -79,27 +79,6 @@ class InvoiceRepository extends AbstractRepository implements IInvoiceRepository
         ]);
     }
 
-    public function generateInvoiceNumber(): string
-    {
-        $year = date('Y');
-        $month = date('m');
-
-        // Get last invoice number for this year/month
-        $lastInvoice = Invoice::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('id', 'desc')
-            ->first();
-
-        if ($lastInvoice) {
-            $lastNumber = intval(substr($lastInvoice->invoice_number, -4));
-            $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $nextNumber = '0001';
-        }
-
-        return "INV-{$year}{$month}-{$nextNumber}";
-    }
-
     private function applyFilters($query, array $filters)
     {
         // Search filter
@@ -147,5 +126,32 @@ class InvoiceRepository extends AbstractRepository implements IInvoiceRepository
             'this_year' => [now()->startOfYear(), now()->endOfYear()],
             default => [now()->subYear(), now()],
         };
+    }
+
+    public static function generateInvoiceNumber(): string
+    {
+        $year = now()->format('Y');
+        $month = now()->format('m');
+
+        // Get the last invoice for this year/month
+        $lastInvoice = Invoice::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->orderBy('invoice_number', 'desc')
+            ->first();
+
+        if ($lastInvoice) {
+            // Extract the sequential number
+            $pattern = '/^INV-' . $year . $month . '-(\d+)$/';
+            if (preg_match($pattern, $lastInvoice->invoice_number, $matches)) {
+                $lastNumber = (int)$matches[1];
+                $nextNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $nextNumber = '0001';
+            }
+        } else {
+            $nextNumber = '0001';
+        }
+
+        return "INV-{$year}{$month}-{$nextNumber}";
     }
 }

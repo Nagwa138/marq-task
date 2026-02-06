@@ -14,5 +14,5 @@ interface IInvoiceRepository
     public function withRelations(int $id);
     public function getStats(): array;
     public function getDashboardStats(): array;
-    public function generateInvoiceNumber(): string;
+    public static function generateInvoiceNumber(): string;
 }

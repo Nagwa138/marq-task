@@ -177,7 +177,7 @@
                         <!-- Invoice Number -->
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">رقم الفاتورة</label>
-                            <input type="text" name="invoice_number" value="{{ $invoiceNumber }}" readonly
+                            <input type="text" name="invoice_number" value="{{ \App\Architecture\Repositories\Classes\InvoiceRepository::generateInvoiceNumber() }}" readonly
                                    class="w-full bg-gray-50 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
 
