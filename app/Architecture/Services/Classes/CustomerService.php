@@ -46,7 +46,7 @@ class CustomerService implements ICustomerService
             ]);
 
             // Check authorization
-            if ($customer->tenant_id !== Auth::user()->tenant_id) {
+            if ($customer->company->tenant_id !== Auth::user()->tenant_id) {
                 throw new Exception('غير مصرح لك بالوصول إلى هذا العميل', 403);
             }
 
