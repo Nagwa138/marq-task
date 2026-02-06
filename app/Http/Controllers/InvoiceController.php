@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Architecture\Services\Classes\InvoiceService;
+use App\Architecture\Services\Interfaces\ICompanyService;
 use App\Architecture\Services\Interfaces\IInvoiceService;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
     public function __construct(
-        private readonly IInvoiceService $invoiceService
+        private readonly IInvoiceService $invoiceService,
+        private readonly ICompanyService $companyService,
     ) {}
 
     /**
@@ -38,7 +40,8 @@ class InvoiceController extends Controller
         // Get data needed for create form
         $data = $this->invoiceService->getCreateData();
 
-        return view('invoices.create', $data);
+        $companies = $this->companyService->all();
+        return view('invoices.create', compact('data', 'companies'));
     }
 
     /**

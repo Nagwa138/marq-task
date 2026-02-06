@@ -20,6 +20,11 @@ class Company extends Model
         'logo',
     ];
 
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
     /**
      * العلاقة مع المستخدمين
      */

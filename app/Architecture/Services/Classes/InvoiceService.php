@@ -32,13 +32,7 @@ class InvoiceService implements IInvoiceService
     public function getCreateData(): array
     {
         // Get active companies for the current tenant/user
-        $companies = auth()->user()->companies()->where('is_active', true)->get();
-
-        // Get customers for active companies
-        $customers = collect();
-        foreach ($companies as $company) {
-            $customers = $customers->merge($company->customers);
-        }
+        $customers = auth()->user()->tenant->customers;
 
         // Generate invoice number
         $invoiceNumber = $this->invoiceRepository->generateInvoiceNumber();

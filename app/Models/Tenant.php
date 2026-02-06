@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Tenant extends Model
 {
@@ -42,12 +43,14 @@ class Tenant extends Model
         return $this->hasMany(User::class);
     }
 
-    /**
-     * العلاقة مع العملاء
-     */
-    public function customers(): HasMany
+    public function companies(): HasMany
     {
-        return $this->hasMany(Customer::class);
+        return $this->hasMany(Company::class);
+    }
+
+    public function customers(): HasManyThrough
+    {
+        return $this->hasManyThrough(Customer::class, Company::class);
     }
 
     /**
