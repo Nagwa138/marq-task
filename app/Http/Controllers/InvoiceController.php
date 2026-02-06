@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Architecture\Services\Classes\InvoiceService;
 use App\Architecture\Services\Interfaces\ICompanyService;
+use App\Architecture\Services\Interfaces\ICustomerService;
 use App\Architecture\Services\Interfaces\IInvoiceService;
 use Illuminate\Http\Request;
 
@@ -12,6 +13,7 @@ class InvoiceController extends Controller
     public function __construct(
         private readonly IInvoiceService $invoiceService,
         private readonly ICompanyService $companyService,
+        private readonly ICustomerService $customerService,
     ) {}
 
     /**
