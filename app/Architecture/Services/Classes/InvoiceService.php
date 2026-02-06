@@ -38,7 +38,6 @@ class InvoiceService implements IInvoiceService
         $invoiceNumber = $this->invoiceRepository->generateInvoiceNumber();
 
         return [
-            'companies' => $companies,
             'customers' => $customers,
             'invoice_number' => $invoiceNumber,
             'default_tax_rate' => config('app.default_tax_rate', 15),

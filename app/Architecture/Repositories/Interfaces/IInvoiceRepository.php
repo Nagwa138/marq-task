@@ -10,8 +10,7 @@ interface IInvoiceRepository
     public function paginate(array $conditions = [], int $perPage = 10);
     public function find(int $id);
     public function create(array $data);
-    public function update(int $id, array $data);
-    public function delete(int $id): bool;
+    public function update(array $conditions, array $data);
     public function withRelations(int $id);
     public function getStats(): array;
     public function getDashboardStats(): array;

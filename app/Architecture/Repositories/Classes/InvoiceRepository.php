@@ -37,26 +37,6 @@ class InvoiceRepository extends AbstractRepository implements IInvoiceRepository
         return Invoice::create($data);
     }
 
-    public function update(int $id, array $data): bool
-    {
-        $invoice = $this->find($id);
-        if (!$invoice) {
-            return false;
-        }
-
-        return $invoice->update($data);
-    }
-
-    public function delete(int $id): bool
-    {
-        $invoice = $this->find($id);
-        if (!$invoice) {
-            return false;
-        }
-
-        return $invoice->delete();
-    }
-
     public function withRelations(int $id): ?Invoice
     {
         return Invoice::with(['customer', 'company', 'items'])
