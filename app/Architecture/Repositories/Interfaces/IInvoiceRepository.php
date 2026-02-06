@@ -2,43 +2,18 @@
 
 namespace App\Architecture\Repositories\Interfaces;
 
-use App\Models\Order;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\Invoice;
 
 interface IInvoiceRepository
 {
-    /**
-     * Create new post
-     *
-     * @param array $data
-     * @return Order|Model
-     */
-    public function create(array $data): Order|Model;
-
-    /**
-     * Update post
-     *
-     * @param array $conditions
-     * @param array $data
-     */
-    public function update(array $conditions, array $data);
-
-    /**
-     * Delete a post
-     *
-     * @param int $id
-     * @return void
-     */
-    public function delete(int $id): void;
-
-    /**
-     * @param array $conditions
-     * @param int $perPage
-     * @return LengthAwarePaginator
-     */
-    public function listBy(array $conditions = [], int $perPage = 10): LengthAwarePaginator;
-
-
-    public function first(array $conditions);
+    public function all(array $filters = []);
+    public function paginate(array $conditions = [], int $perPage = 10);
+    public function find(int $id);
+    public function create(array $data);
+    public function update(int $id, array $data);
+    public function delete(int $id): bool;
+    public function withRelations(int $id);
+    public function getStats(): array;
+    public function getDashboardStats(): array;
+    public function generateInvoiceNumber(): string;
 }

@@ -2,108 +2,132 @@
 
 namespace App\Architecture\Services\Classes;
 
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Architecture\Repositories\Interfaces\IInvoiceRepository;
 use App\Architecture\Services\Interfaces\IInvoiceService;
-use App\Models\Invoice;
-use App\Architecture\Services\Classes\CustomerService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class InvoiceService implements IInvoiceService
 {
     public function __construct(
-        private IInvoiceRepository $repository,
-        private CustomerService $customerService
+        private readonly IInvoiceRepository $invoiceRepository
     ) {}
 
-    public function createInvoice(array $data): Invoice
+    public function getIndexData(array $filters = []): array
+    {
+        // Get paginated invoices
+        $invoices = $this->paginate($filters);
+
+        // Get statistics
+        $stats = $this->getDashboardStats();
+
+        return [
+            'invoices' => $invoices,
+            'stats' => $stats,
+        ];
+    }
+
+    public function getCreateData(): array
+    {
+        // Get active companies for the current tenant/user
+        $companies = auth()->user()->companies()->where('is_active', true)->get();
+
+        // Get customers for active companies
+        $customers = collect();
+        foreach ($companies as $company) {
+            $customers = $customers->merge($company->customers);
+        }
+
+        // Generate invoice number
+        $invoiceNumber = $this->invoiceRepository->generateInvoiceNumber();
+
+        return [
+            'companies' => $companies,
+            'customers' => $customers,
+            'invoice_number' => $invoiceNumber,
+            'default_tax_rate' => config('app.default_tax_rate', 15),
+        ];
+    }
+
+    public function create(array $data): Invoice
     {
         return DB::transaction(function () use ($data) {
             // Calculate totals
-            $totals = $this->calculateTotals($data['items'], $data['discount'] ?? 0, $data['discount_type'] ?? 'fixed');
+            $subtotal = 0;
+            $items = [];
+
+            // Process invoice items if provided
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $itemTotal = $item['quantity'] * $item['unit_price'];
+                    $subtotal += $itemTotal;
+
+                    $items[] = [
+                        'description' => $item['description'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total' => $itemTotal,
+                    ];
+                }
+            }
+
+            // Calculate tax
+            $taxRate = $data['tax_rate'] ?? config('app.default_tax_rate', 15);
+            $tax = ($subtotal * $taxRate) / 100;
+
+            // Calculate total
+            $total = $subtotal + $tax;
+
+            // Prepare invoice data
+            $invoiceData = [
+                'company_id' => $data['company_id'],
+                'customer_id' => $data['customer_id'],
+                'invoice_number' => $data['invoice_number'] ?? $this->invoiceRepository->generateInvoiceNumber(),
+                'issue_date' => $data['issue_date'] ?? now(),
+                'due_date' => $data['due_date'] ?? now()->addDays(30),
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'tax_rate' => $taxRate,
+                'total' => $total,
+                'status' => $data['status'] ?? 'draft',
+                'notes' => $data['notes'] ?? null,
+            ];
 
             // Create invoice
-            $invoice = $this->repository->create(array_merge($data, $totals));
+            $invoice = $this->invoiceRepository->create($invoiceData);
 
-            // Create invoice items
-            $this->createInvoiceItems($invoice, $data['items']);
-
-            // Update customer balance
-            $this->customerService->updateBalance($data['customer_id']);
-
-            return $invoice->load(['items', 'customer', 'company']);
-        });
-    }
-
-    public function sendInvoice(int $invoiceId): Invoice
-    {
-        return $this->repository->update($invoiceId, ['status' => 'sent']);
-    }
-
-    public function markAsPaid(int $invoiceId): Invoice
-    {
-        return DB::transaction(function () use ($invoiceId) {
-            $invoice = $this->repository->update($invoiceId, ['status' => 'paid']);
-            $this->customerService->updateBalance($invoice->customer_id);
-
-            return $invoice;
-        });
-    }
-
-    protected function calculateTotals(array $items, float $discount = 0, string $discountType = 'fixed'): array
-    {
-        $subtotal = collect($items)->sum(function ($item) {
-            return ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0);
-        });
-
-        // Apply discount
-        if ($discount > 0) {
-            if ($discountType === 'percentage') {
-                $subtotal -= $subtotal * ($discount / 100);
-            } else {
-                $subtotal -= $discount;
+            // Create invoice items if any
+            if (!empty($items)) {
+                foreach ($items as $item) {
+                    $invoice->items()->create($item);
+                }
             }
-        }
 
-        // Calculate tax (15% default)
-        $taxRate = 15;
-        $tax = $subtotal * ($taxRate / 100);
-        $total = $subtotal + $tax;
-
-        return [
-            'subtotal' => round($subtotal, 2),
-            'tax' => round($tax, 2),
-            'total' => round($total, 2),
-            'discount' => $discount,
-            'discount_type' => $discountType,
-            'tax_rate' => $taxRate,
-        ];
+            return $invoice->load(['customer', 'company', 'items']);
+        });
     }
 
-    protected function createInvoiceItems(Invoice $invoice, array $items): void
+    public function getDashboardStats(): array
     {
-        foreach ($items as $item) {
-            $total = ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0);
-            $taxAmount = $total * (($item['tax_rate'] ?? 0) / 100);
+        return Cache::remember('invoice_dashboard_stats', 3600, function () {
+            $stats = $this->invoiceRepository->getDashboardStats();
 
-            $invoice->items()->create([
-                'description' => $item['description'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'total' => $total,
-                'tax_rate' => $item['tax_rate'] ?? 0,
-                'tax_amount' => $taxAmount,
+            // Calculate collection rate
+            $collectionRate = 0;
+            if ($stats['total'] > 0) {
+                $collectionRate = round(($stats['paid'] / $stats['total']) * 100, 2);
+            }
+
+            return array_merge($stats, [
+                'collection_rate' => $collectionRate,
             ]);
-        }
+        });
     }
 
-    public function getInvoiceStatistics(): array
+    public function paginate(array $filters = [])
     {
-        return [
-            'total' => $this->repository->count(),
-            'paid' => $this->repository->countByStatus('paid'),
-            'pending' => $this->repository->countByStatus('sent'),
-            'overdue' => $this->repository->getOverdueCount(),
-            'revenue' => $this->repository->getTotalRevenue(),
-        ];
+        return $this->invoiceRepository->paginate($filters);
     }
 }

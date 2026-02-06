@@ -2,129 +2,150 @@
 
 namespace App\Http\Controllers;
 
-use App\Architecture\Services\Interfaces\ICompanyService;
-use App\Architecture\Services\Interfaces\ICustomerService;
+use App\Architecture\Services\Classes\InvoiceService;
 use App\Architecture\Services\Interfaces\IInvoiceService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class InvoiceController extends Controller
 {
     public function __construct(
-        private IInvoiceService $invoiceService,
-        private ICompanyService $companyService,
-        private ICustomerService $customerService
-    ) {
-        $this->middleware('can:view,invoice')->only('show', 'edit');
+        private readonly IInvoiceService $invoiceService
+    ) {}
+
+    /**
+     * Display a listing of invoices.
+     */
+    public function index(Request $request)
+    {
+        // Build filters from request
+        $filters = $this->buildFilters($request);
+
+        // Get all data needed for the index page
+        $data = $this->invoiceService->getIndexData($filters);
+
+        return view('invoices.index', [
+            'invoices' => $data['invoices'],
+            'stats' => $data['stats'],
+            'filters' => $request->only(['search', 'status', 'date', 'sort']),
+        ]);
     }
 
-    public function index(Request $request): View
+    /**
+     * Show the form for creating a new invoice.
+     */
+    public function create()
     {
-        $filters = $request->only(['search', 'status', 'customer_id', 'from_date', 'to_date']);
-        $invoices = $this->invoiceService->getAllInvoices($filters);
-        $stats = $this->invoiceService->getInvoiceStatistics();
+        // Get data needed for create form
+        $data = $this->invoiceService->getCreateData();
 
-        return view('invoices.index', compact('invoices', 'stats'));
+        return view('invoices.create', $data);
     }
 
-    public function create(Request $request): View
+    /**
+     * Store a newly created invoice.
+     */
+    public function store(Request $request)
     {
-        $companies = $this->companyService->getAllCompanies();
-        $customers = $this->customerService->getAllCustomers();
+        $validated = $request->validate([
+            'company_id' => 'required|exists:companies,id',
+            'customer_id' => 'required|exists:customers,id',
+            'invoice_number' => 'required|string|max:50|unique:invoices,invoice_number',
+            'issue_date' => 'required|date',
+            'due_date' => 'required|date|after:issue_date',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'status' => 'in:draft,sent,paid,overdue',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
 
-        $preSelectedCustomer = $request->query('customer_id');
+        try {
+            $invoice = $this->invoiceService->create($validated);
 
-        return view('invoices.create', compact('companies', 'customers', 'preSelectedCustomer'));
+            return redirect()->route('invoices.show', $invoice)
+                ->with('success', 'تم إنشاء الفاتورة بنجاح');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إنشاء الفاتورة: ' . $e->getMessage());
+        }
     }
 
-    public function store(StoreInvoiceRequest $request): RedirectResponse
+    /**
+     * Build filters array from request.
+     */
+    private function buildFilters(Request $request): array
     {
-        $invoice = $this->invoiceService->createInvoice($request->validated());
+        $filters = [];
 
-        return redirect()
-            ->route('invoices.show', $invoice)
-            ->with('success', 'تم إنشاء الفاتورة بنجاح');
+        // Search filter
+        if ($request->has('search') && $request->search) {
+            $filters['search'] = $request->search;
+        }
+
+        // Status filter
+        if ($request->has('status') && $request->status) {
+            $filters['status'] = $request->status;
+        }
+
+        // Company filter (from query parameter)
+        if ($request->has('company') && $request->company) {
+            $filters['company_id'] = $request->company;
+        }
+
+        // Customer filter
+        if ($request->has('customer') && $request->customer) {
+            $filters['customer_id'] = $request->customer;
+        }
+
+        // Date range filter
+        if ($request->has('date') && $request->date) {
+            $filters['date'] = $request->date;
+        }
+
+        // Sorting
+        $sort = $request->get('sort', 'newest');
+        $filters['sort_by'] = $this->getSortColumn($sort);
+        $filters['sort_direction'] = $this->getSortDirection($sort);
+
+        // Pagination
+        $filters['per_page'] = 15;
+
+        return $filters;
     }
 
-    public function show(int $id): View
+    /**
+     * Get sort column based on sort option.
+     */
+    private function getSortColumn(string $sort): string
     {
-        $invoice = $this->invoiceService->getInvoice($id);
-
-        return view('invoices.show', compact('invoice'));
+        return match($sort) {
+            'oldest' => 'created_at',
+            'newest' => 'created_at',
+            'due_date_asc' => 'due_date',
+            'due_date_desc' => 'due_date',
+            'amount_asc' => 'total',
+            'amount_desc' => 'total',
+            default => 'created_at',
+        };
     }
 
-    public function edit(int $id): View
+    /**
+     * Get sort direction based on sort option.
+     */
+    private function getSortDirection(string $sort): string
     {
-        $invoice = $this->invoiceService->getInvoice($id);
-        $companies = $this->companyService->getAllCompanies();
-        $customers = $this->customerService->getAllCustomers();
-
-        return view('invoices.edit', compact('invoice', 'companies', 'customers'));
-    }
-
-    public function update(UpdateInvoiceRequest $request, int $id): RedirectResponse
-    {
-        $invoice = $this->invoiceService->updateInvoice($id, $request->validated());
-
-        return redirect()
-            ->route('invoices.show', $invoice)
-            ->with('success', 'تم تحديث الفاتورة بنجاح');
-    }
-
-    public function destroy(int $id): RedirectResponse
-    {
-        $this->invoiceService->deleteInvoice($id);
-
-        return redirect()
-            ->route('invoices.index')
-            ->with('success', 'تم حذف الفاتورة بنجاح');
-    }
-
-    public function send(int $id): RedirectResponse
-    {
-        $invoice = $this->invoiceService->sendInvoice($id);
-
-        return back()->with('success', 'تم إرسال الفاتورة بنجاح');
-    }
-
-    public function markAsPaid(int $id): RedirectResponse
-    {
-        $invoice = $this->invoiceService->markAsPaid($id);
-
-        return back()->with('success', 'تم تعيين الفاتورة كمدفوعة');
-    }
-
-    public function duplicate(int $id): RedirectResponse
-    {
-        $newInvoice = $this->invoiceService->duplicateInvoice($id);
-
-        return redirect()
-            ->route('invoices.show', $newInvoice)
-            ->with('success', 'تم نسخ الفاتورة بنجاح');
-    }
-
-    public function print(int $id): View
-    {
-        $invoice = $this->invoiceService->getInvoice($id);
-
-        return view('invoices.print', compact('invoice'));
-    }
-
-    public function pdf(int $id)
-    {
-        $invoice = $this->invoiceService->getInvoice($id);
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
-
-        return $pdf->download("invoice-{$invoice->invoice_number}.pdf");
-    }
-
-    public function export(Request $request)
-    {
-        $filters = $request->only(['from_date', 'to_date', 'status']);
-        $invoices = $this->invoiceService->getInvoicesForExport($filters);
-
-        // Return CSV or Excel file
-        return $this->invoiceService->exportToCsv($invoices);
+        return match($sort) {
+            'oldest' => 'asc',
+            'newest' => 'desc',
+            'due_date_asc' => 'asc',
+            'due_date_desc' => 'desc',
+            'amount_asc' => 'asc',
+            'amount_desc' => 'desc',
+            default => 'desc',
+        };
     }
 }

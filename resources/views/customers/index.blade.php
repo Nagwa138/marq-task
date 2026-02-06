@@ -266,7 +266,7 @@
 @push('scripts')
     <script>
         function exportCustomers() {
-            window.open('{{ route("customers.export") }}', '_blank');
+            {{--window.open('{{ route("customers.export") }}', '_blank');--}}
         }
 
         function sendBulkSMS() {
