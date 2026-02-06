@@ -51,8 +51,7 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Active Company Card -->
-                                <div class="company-card bg-white rounded-xl shadow-sm border p-6 active tenant-badge cursor-pointer"
-                                     onclick="selectCompany({{ $customer->company_id }})">
+                                <div class="company-card bg-white rounded-xl shadow-sm border p-6 active tenant-badge cursor-pointer">
                                     <div class="flex items-center">
                                         @if($customer->company->logo)
                                             <img src="{{ asset('/storage/' . $customer->company->logo) }}" alt="{{ $customer->company->name }}" class="h-12 w-12 rounded-lg object-cover ml-3">
