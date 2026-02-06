@@ -21,7 +21,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">إجمالي العملاء</p>
-                        <p class="text-2xl font-bold text-gray-800">{{ $totalCustomers }}</p>
+                        <p class="text-2xl font-bold text-gray-800">{{ $stats['total_customers'] }}</p>
                     </div>
                     <i class="fas fa-users text-2xl text-blue-600 opacity-50"></i>
                 </div>
@@ -134,7 +134,6 @@
                             <td class="px-6 py-4">
                                 <span class="text-gray-500">#{{ $customer->id }}</span>
                             </td>
-
                             <!-- Customer Info -->
                             <td class="px-6 py-4">
                                 <div class="flex items-center">

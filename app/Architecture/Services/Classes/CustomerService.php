@@ -174,12 +174,12 @@ class CustomerService implements ICustomerService
     public function getStats(): array
     {
         try {
-            $activeCompanyId = session('active_company_id');
+            $companyId = request('company');
 
             $query = $this->customerRepository->prepareQuery();
 
-            if ($activeCompanyId) {
-                $query->where('company_id', $activeCompanyId);
+            if ($companyId) {
+                $query->where('company_id', $companyId);
             }
 
             $totalCustomers = $query->count();

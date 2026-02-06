@@ -279,11 +279,6 @@
                                 </a>
 
                                 <!-- Edit -->
-                                <a href="{{ route('companies.edit', $company) }}"
-                                   class="text-yellow-600 hover:text-yellow-900 p-2 rounded-lg hover:bg-yellow-50"
-                                   title="تعديل">
-                                    <i class="fas fa-edit"></i>
-                                </a>
 
                                 <!-- Invoices -->
                                 <a href="{{ route('invoices.index') }}?company={{ $company->id }}"

@@ -20,7 +20,7 @@ class CustomerController extends Controller
 
     public function index(Request $request)
     {
-        if (!session('active_company_id')) {
+        if (!request('company')) {
             return back()->withInput()
                 ->with('error', 'برجاء تفعيل احد الشركات حتي تتمكن من عرض العملاء المنتميين للشركه.');
         }

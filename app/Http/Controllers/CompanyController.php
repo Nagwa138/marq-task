@@ -33,7 +33,8 @@ class CompanyController extends Controller
 
     public function create(): View
     {
-        return view('companies.create');
+        $companies = $this->companyService->all();
+        return view('companies.create', compact('companies'));
     }
 
     public function store(CompanyStoreRequest $request): RedirectResponse
