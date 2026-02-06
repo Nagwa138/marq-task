@@ -207,11 +207,10 @@ class CustomerService implements ICustomerService
                 'negative_balance' => (float) abs($negativeBalance),
                 'average_balance' => $totalCustomers > 0 ? (float) ($totalBalance / $totalCustomers) : 0,
                 'top_customers' => $topCustomers,
-                'recent_customers' => $recentCustomers,
+                'recent_customers' => $recentCustomers ?? 0,
             ];
 
         } catch (Exception $e) {
-            dd($e);
             throw new Exception('فشل في حساب إحصائيات العملاء: ' . $e->getMessage());
         }
     }
