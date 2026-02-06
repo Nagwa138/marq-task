@@ -75,7 +75,7 @@ class InvoiceService implements IInvoiceService
 
             // Prepare invoice data
             $invoiceData = [
-                'tenant_id' => auth()->user()->tenent_id,
+                'tenant_id' => auth()->user()->tenant_id,
                 'company_id' => $data['company_id'],
                 'customer_id' => $data['customer_id'],
                 'invoice_number' => $data['invoice_number'] ?? $this->invoiceRepository->generateInvoiceNumber(),
