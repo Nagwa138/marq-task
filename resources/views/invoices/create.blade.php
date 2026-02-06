@@ -25,6 +25,12 @@
         <form action="{{ route('invoices.store') }}" method="POST" id="invoiceForm">
             @csrf
 
+            @if(session('error'))
+                <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-red-600">{{ session('error') }}</p>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Left Column - Basic Information -->
                 <div class="lg:col-span-2">
@@ -44,50 +50,24 @@
                         @enderror
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @if($activeCompanyId)
                                 <!-- Active Company Card -->
-                                @php
-                                    $activeCompany = \App\Models\Company::find($activeCompanyId);
-                                @endphp
                                 <div class="company-card bg-white rounded-xl shadow-sm border p-6 active tenant-badge cursor-pointer"
-                                     onclick="selectCompany({{ $activeCompanyId }})">
+                                     onclick="selectCompany({{ $customer->company_id }})">
                                     <div class="flex items-center">
-                                        @if($activeCompany->logo)
-                                            <img src="{{ $activeCompany->logo_url }}" alt="{{ $activeCompany->name }}" class="h-12 w-12 rounded-lg object-cover ml-3">
+                                        @if($customer->company->logo)
+                                            <img src="{{ asset('/storage/' . $customer->company->logo) }}" alt="{{ $customer->company->name }}" class="h-12 w-12 rounded-lg object-cover ml-3">
                                         @else
                                             <div class="h-12 w-12 rounded-lg bg-indigo-100 flex items-center justify-center ml-3">
                                                 <i class="fas fa-building text-indigo-600"></i>
                                             </div>
                                         @endif
                                         <div>
-                                            <h3 class="font-semibold text-gray-800">{{ $activeCompany->name }}</h3>
-                                            <p class="text-sm text-gray-500">{{ $activeCompany->email }}</p>
+                                            <h3 class="font-semibold text-gray-800">{{ $customer->company->name }}</h3>
+                                            <p class="text-sm text-gray-500">{{ $customer->company->email }}</p>
                                         </div>
                                     </div>
-                                    <input type="radio" name="company_id" value="{{ $activeCompanyId }}" class="hidden" checked>
+                                    <input type="radio" name="company_id" value="{{ $customer->company_id }}" class="hidden" checked>
                                 </div>
-                            @endif
-
-                            <!-- Other Companies -->
-                            @foreach($companies->where('id', '!=', $activeCompanyId) as $company)
-                                <div class="company-card bg-white rounded-xl shadow-sm border p-6 hover:border-indigo-300 cursor-pointer"
-                                     onclick="selectCompany({{ $company->id }})">
-                                    <div class="flex items-center">
-                                        @if($company->logo)
-                                            <img src="{{ $company->logo_url }}" alt="{{ $company->name }}" class="h-12 w-12 rounded-lg object-cover ml-3">
-                                        @else
-                                            <div class="h-12 w-12 rounded-lg bg-indigo-100 flex items-center justify-center ml-3">
-                                                <i class="fas fa-building text-indigo-600"></i>
-                                            </div>
-                                        @endif
-                                        <div>
-                                            <h3 class="font-semibold text-gray-800">{{ $company->name }}</h3>
-                                            <p class="text-sm text-gray-500">{{ $company->email }}</p>
-                                        </div>
-                                    </div>
-                                    <input type="radio" name="company_id" value="{{ $company->id }}" class="hidden">
-                                </div>
-                            @endforeach
                         </div>
                     </div>
                     <input id="customer_id" name="customer_id" value="{{ $customer->id }}" type="hidden" />
