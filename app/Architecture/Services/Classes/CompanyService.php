@@ -152,17 +152,17 @@ class CompanyService implements ICompanyService
 
         $totalPaid = DB::table('invoices')
             ->where('status', 'paid')
-            ->sum('total_amount') ?? 0;
+            ->sum('total') ?? 0;
 
         $outstandingBalance = DB::table('invoices')
             ->where('status', '!=', 'paid')
-            ->sum('total_amount') ?? 0;
+            ->sum('total') ?? 0;
 
         $currentMonthRevenue = DB::table('invoices')
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->where('status', 'paid')
-            ->sum('total_amount') ?? 0;
+            ->sum('total') ?? 0;
 
         return [
             'monthly_invoices' => $monthlyInvoices,
@@ -195,13 +195,13 @@ class CompanyService implements ICompanyService
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->where('status', 'paid')
-            ->sum('total_amount') ?? 0;
+            ->sum('total') ?? 0;
 
         $lastMonthRevenue = DB::table('invoices')
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->where('status', 'paid')
-            ->sum('total_amount') ?? 0;
+            ->sum('total') ?? 0;
 
         if ($lastMonthRevenue > 0) {
             return round((($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 2);
