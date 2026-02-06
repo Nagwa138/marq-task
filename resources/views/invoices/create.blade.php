@@ -281,7 +281,6 @@
 @push('scripts')
     <script>
         let itemCount = 1;
-        const customers = {!! $customers->keyBy('id')->toJson() !!};
 
         // Company Selection
         function selectCompany(companyId) {
@@ -294,22 +293,6 @@
             selectedCard.classList.add('active', 'tenant-badge');
             selectedCard.querySelector('input[type="radio"]').checked = true;
         }
-
-        // Customer Selection
-        document.getElementById('customer_id').addEventListener('change', function() {
-            const customerId = this.value;
-            const customerInfo = document.getElementById('customerInfo');
-
-            if (customerId && customers[customerId]) {
-                const customer = customers[customerId];
-                document.getElementById('customerEmail').textContent = customer.email || 'غير متوفر';
-                document.getElementById('customerPhone').textContent = customer.phone || 'غير متوفر';
-                document.getElementById('customerAddress').textContent = customer.address || 'غير متوفر';
-                customerInfo.classList.remove('hidden');
-            } else {
-                customerInfo.classList.add('hidden');
-            }
-        });
 
         // Invoice Items Management
         function addItem() {
