@@ -16,18 +16,12 @@ class CustomerStoreRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = Auth::user()->tenant_id;
-
         return [
             'name' => 'required|string|max:255',
             'email' => [
                 'nullable',
                 'email',
-                'max:255',
-                Rule::unique('customers')->where(function ($query) use ($tenantId) {
-                    return $query->where('tenant_id', $tenantId);
-                })
-            ],
+                'max:255'],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'tax_number' => 'nullable|string|max:50',

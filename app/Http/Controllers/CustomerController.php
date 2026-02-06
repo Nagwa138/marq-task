@@ -34,6 +34,7 @@ class CustomerController extends Controller
             ->orderBy('created_at', 'desc')
             ->take(6)
             ->get();
+
         $activeCompanyId = session('active_company_id');
 
         return view('customers.index', compact('customers', 'stats', 'companies', 'activeCompanyId'));
@@ -59,7 +60,6 @@ class CustomerController extends Controller
 
     public function store(CustomerStoreRequest $request): RedirectResponse
     {
-        dd($request->all());
         $customer = $this->customerService->create($request->safe()->toArray());
 
         return redirect()
