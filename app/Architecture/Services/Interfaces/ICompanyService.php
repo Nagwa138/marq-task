@@ -19,4 +19,6 @@ interface ICompanyService
     public function getStats(): array;
 
     public function deleteLogo(int $id): bool;
+    public function getIndexData(array $filters = []): array;
+    public function getDashboardStats(): array;
 }

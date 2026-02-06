@@ -19,10 +19,16 @@ class CompanyController extends Controller
     {
         $filters = $request->only(['search', 'status']);
         $companies = $this->companyService->all($filters);
-        $paginatedCompanies = $this->companyService->paginate($filters);
-        $stats = $this->companyService->getStats();
 
-        return view('companies.index', compact('companies', 'stats', 'paginatedCompanies'));
+        // Get all data needed for the index page
+        $data = $this->companyService->getIndexData($filters);
+
+        return view('companies.index', [
+            'paginatedCompanies' => $data['paginatedCompanies'],
+            'stats' => $data['stats'],
+            'companies' => $companies
+            ]
+        );
     }
 
     public function create(): View

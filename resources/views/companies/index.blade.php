@@ -65,8 +65,8 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-blue-800">الشركات النشطة</p>
-                            <p class="text-2xl font-bold text-blue-900">{{ $stats['active_companies'] }}</p>
-                            @if($stats['active_companies'] > 0)
+                            <p class="text-2xl font-bold text-blue-900">{{ $stats['recent'] }}</p>
+                            @if($stats['recent'] > 0)
                                 <p class="text-xs text-blue-600 mt-1">
                                     <i class="fas fa-building ml-1"></i>
                                     {{ $companies->count() }} إجمالي الشركات

@@ -28,6 +28,7 @@ class CustomerController extends Controller
         $filters = $request->only(['search', 'type', 'balance']);
         $customers = $this->customerService->all($filters);
         $stats = $this->customerService->getStats();
+
         $companies = Company::where('tenant_id', auth()->user()->tenant_id)
             ->withCount(['customers', 'invoices'])
             ->orderBy('created_at', 'desc')
@@ -40,7 +41,6 @@ class CustomerController extends Controller
 
     public function create()
     {
-
         if (!session('active_company_id')) {
 
             return back()->withInput()
@@ -59,7 +59,8 @@ class CustomerController extends Controller
 
     public function store(CustomerStoreRequest $request): RedirectResponse
     {
-        $customer = $this->customerService->create($request->validated());
+        dd($request->all());
+        $customer = $this->customerService->create($request->safe()->toArray());
 
         return redirect()
             ->route('customers.index', $customer)
