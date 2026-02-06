@@ -90,57 +90,9 @@
                             @endforeach
                         </div>
                     </div>
+                    <input id="customer_id" name="customer_id" value="{{ $customer->id }}" type="hidden" />
 
-                    <!-- Customer Selection -->
-                    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center">
-                                <div class="bg-blue-100 p-2 rounded-lg ml-3">
-                                    <i class="fas fa-user text-blue-600"></i>
-                                </div>
-                                <h3 class="text-lg font-semibold text-gray-800">اختر العميل</h3>
-                            </div>
-                            <a href="{{ route('customers.create') }}" class="text-sm text-indigo-600 hover:text-indigo-800">
-                                <i class="fas fa-plus ml-1"></i> إضافة عميل جديد
-                            </a>
-                        </div>
-
-                        <div class="relative">
-                            <select id="customer_id" name="customer_id" required
-                                    class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('customer_id') border-red-500 @enderror">
-                                <option value="">-- اختر العميل --</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}"
-                                        {{ old('customer_id', request('customer_id')) == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }} - {{ $customer->email ?? $customer->phone }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('customer_id')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <!-- Customer Info (will be populated dynamically) -->
-                        <div id="customerInfo" class="mt-4 p-4 bg-gray-50 rounded-lg hidden">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-sm text-gray-500">البريد الإلكتروني</p>
-                                    <p id="customerEmail" class="font-medium text-gray-800"></p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">رقم الهاتف</p>
-                                    <p id="customerPhone" class="font-medium text-gray-800"></p>
-                                </div>
-                                <div class="col-span-2">
-                                    <p class="text-sm text-gray-500">العنوان</p>
-                                    <p id="customerAddress" class="font-medium text-gray-800"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Invoice Items -->
+                   <!-- Invoice Items -->
                     <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                         <div class="flex items-center justify-between mb-6">
                             <div class="flex items-center">
