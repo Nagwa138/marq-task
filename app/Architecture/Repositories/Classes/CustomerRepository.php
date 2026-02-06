@@ -69,7 +69,6 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
     public function findWithRelations(int $id, array $relations = [])
     {
         return $this->model
-            ->where('tenant_id', $this->getTenantId())
             ->with($relations)
             ->findOrFail($id);
     }
