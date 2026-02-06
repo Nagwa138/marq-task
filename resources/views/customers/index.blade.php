@@ -31,7 +31,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">مدينون</p>
-                        <p class="text-2xl font-bold text-red-600">{{ $overdueCustomers }}</p>
+                        <p class="text-2xl font-bold text-red-600">{{ $stats['customers_with_invoices'] }}</p>
                     </div>
                     <i class="fas fa-exclamation-triangle text-2xl text-red-600 opacity-50"></i>
                 </div>
@@ -41,7 +41,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">إجمالي الديون</p>
-                        <p class="text-2xl font-bold text-orange-600">{{ number_format($totalDebt, 2) }} ر.س</p>
+                        <p class="text-2xl font-bold text-orange-600">{{ number_format($stats['negative_balance'], 2) }} ر.س</p>
                     </div>
                     <i class="fas fa-money-bill-wave text-2xl text-orange-600 opacity-50"></i>
                 </div>
@@ -51,7 +51,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600">عملاء جدد</p>
-                        <p class="text-2xl font-bold text-green-600">{{ $newCustomers }}</p>
+                        <p class="text-2xl font-bold text-green-600">{{ $stats['recent_customers'] }}</p>
                     </div>
                     <i class="fas fa-user-plus text-2xl text-green-600 opacity-50"></i>
                 </div>
