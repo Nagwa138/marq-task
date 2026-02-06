@@ -6,6 +6,7 @@ use App\Architecture\Repositories\Interfaces\ICompanyRepository;
 use App\Architecture\Services\Interfaces\ICompanyService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class CompanyService implements ICompanyService
