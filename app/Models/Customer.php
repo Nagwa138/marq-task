@@ -46,6 +46,12 @@ class Customer extends Model
         return $this->hasMany(Invoice::class);
     }
 
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     /**
      * العلاقة مع المدفوعات
      */

@@ -18,8 +18,8 @@ class CustomerService implements ICustomerService
     {
         try {
             // Add active company filter if set
-            if (session('active_company_id')) {
-                $filters['company_id'] = session('active_company_id');
+            if (request('company')) {
+                $filters['company_id'] = request('company');
             }
 
             return $this->customerRepository->paginateWithStats($filters);

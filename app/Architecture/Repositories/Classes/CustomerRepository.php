@@ -40,7 +40,9 @@ class CustomerRepository extends AbstractRepository implements ICustomerReposito
         $query = $this->prepareQuery();
 
         // Apply tenant filter
-        $query->where('company_id', session('active_company_id'));
+        $query->whereHas('company', function ($q){
+            $q->where('tenant_id', \auth()->user()->tenant_id);
+        });
 
         // Apply other filters
         $this->applyFilters($query, $filters);

@@ -6,6 +6,7 @@ use App\Architecture\Repositories\AbstractRepository;
 use App\Architecture\Repositories\Interfaces\ICompanyRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CompanyRepository extends AbstractRepository implements ICompanyRepository
 {
@@ -73,7 +74,7 @@ class CompanyRepository extends AbstractRepository implements ICompanyRepository
             ->withCount([
                 'invoices',
                 'invoices as total_invoice_amount' => function ($query) {
-                    $query->select(\DB::raw('SUM(total)'));
+                    $query->select(DB::raw('SUM(total)'));
                 },
                 'customers'
             ])
