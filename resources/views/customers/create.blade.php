@@ -51,8 +51,38 @@
             </div>
         </div>
 
+        <!-- Validation Error Summary -->
+        @if($errors->any())
+            <div class="mb-6">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+                    <div class="flex items-start">
+                        <div class="bg-red-100 p-3 rounded-lg ml-3">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-red-800 mb-2">
+                                يرجى تصحيح الأخطاء التالية
+                            </h3>
+                            <ul class="space-y-2">
+                                @foreach($errors->all() as $error)
+                                    <li class="flex items-center text-red-700">
+                                        <i class="fas fa-circle text-xs ml-2"></i>
+                                        {{ $error }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <button type="button" onclick="this.parentElement.parentElement.remove()"
+                                class="text-red-400 hover:text-red-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <form action="{{ route('customers.store') }}" method="POST" id="customerForm">
+            <form action="{{ route('customers.store') }}" method="POST" id="customerForm" novalidate>
                 @csrf
 
                 <!-- Step 1: Company Selection -->
@@ -67,9 +97,13 @@
                         </div>
                     </div>
 
+                    <!-- Company Selection Error -->
                     @error('company_id')
-                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <p class="text-red-600">{{ $message }}</p>
+                    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-fade-in">
+                        <div class="flex items-center text-red-700">
+                            <i class="fas fa-exclamation-circle ml-2"></i>
+                            <span>{{ $message }}</span>
+                        </div>
                     </div>
                     @enderror
 
@@ -84,7 +118,8 @@
                             @php
                                 $activeCompany = $companies->where('id', $activeCompanyId)->first();
                             @endphp
-                            <div class="company-card bg-gradient-to-r from-indigo-50 to-indigo-100 border-2 border-indigo-300 rounded-xl p-6 active tenant-badge cursor-pointer hover:shadow-md transition-shadow"
+                            <div class="company-card bg-gradient-to-r from-indigo-50 to-indigo-100 border-2 border-indigo-300 rounded-xl p-6 active tenant-badge cursor-pointer hover:shadow-md transition-shadow
+                                 {{ $errors->has('company_id') ? 'border-red-300' : '' }}"
                                  onclick="selectCompany({{ $activeCompanyId }})">
                                 <div class="flex items-center">
                                     @if($activeCompany->logo)
@@ -104,13 +139,15 @@
                                         </div>
                                     </div>
                                 </div>
-                                <input type="radio" name="company_id" value="{{ $activeCompanyId }}" class="hidden" {{ old('company_id') == $activeCompanyId ? 'checked' : '' }}>
+                                <input type="radio" name="company_id" value="{{ $activeCompanyId }}" class="hidden"
+                                    {{ old('company_id') == $activeCompanyId ? 'checked' : '' }}>
                             </div>
                         @endif
 
                         <!-- Other Companies -->
                         @foreach($companies->where('id', '!=', $activeCompanyId) as $company)
-                            <div class="company-card bg-white border border-gray-300 rounded-xl p-6 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+                            <div class="company-card bg-white border border-gray-300 rounded-xl p-6 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all
+                                 {{ $errors->has('company_id') ? 'border-red-300' : '' }}"
                                  onclick="selectCompany({{ $company->id }})">
                                 <div class="flex items-center">
                                     @if($company->logo)
@@ -125,7 +162,8 @@
                                         <p class="text-sm text-gray-500">{{ $company->email }}</p>
                                     </div>
                                 </div>
-                                <input type="radio" name="company_id" value="{{ $company->id }}" class="hidden" {{ old('company_id') == $company->id ? 'checked' : '' }}>
+                                <input type="radio" name="company_id" value="{{ $company->id }}" class="hidden"
+                                    {{ old('company_id') == $company->id ? 'checked' : '' }}>
                             </div>
                         @endforeach
 
@@ -152,7 +190,7 @@
                 </div>
 
                 <!-- Step 2: Customer Information -->
-                <div id="step2" class="p-8 hidden">
+                <div id="step2" class="p-8 {{ $errors->any() && old('company_id') ? '' : 'hidden' }}">
                     <div class="flex items-center mb-6">
                         <div class="bg-blue-100 p-2 rounded-lg ml-3">
                             <i class="fas fa-user text-blue-600"></i>
@@ -166,120 +204,245 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Name -->
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                اسم العميل <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="name" name="name" value="{{ old('name') }}" required
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
-                                   placeholder="أدخل اسم العميل الكامل">
-                            @error('name')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="name" class="text-sm font-medium text-gray-700">
+                                    اسم العميل <span class="text-red-500">*</span>
+                                </label>
+                                @error('name')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="name" name="name" value="{{ old('name') }}" required
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('name') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="أدخل اسم العميل الكامل">
+                                @if($errors->has('name'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
 
                         <!-- Customer Type -->
                         <div>
-                            <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
-                                نوع العميل <span class="text-red-500">*</span>
-                            </label>
-                            <select id="type" name="type" required
-                                    class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('type') border-red-500 @enderror"
-                                    onchange="toggleCustomerTypeFields()">
-                                <option value="">-- اختر النوع --</option>
-                                <option value="individual" {{ old('type') == 'individual' ? 'selected' : '' }}>فرد</option>
-                                <option value="company" {{ old('type') == 'company' ? 'selected' : '' }}>شركة</option>
-                            </select>
-                            @error('type')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="type" class="text-sm font-medium text-gray-700">
+                                    نوع العميل <span class="text-red-500">*</span>
+                                </label>
+                                @error('type')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <select id="type" name="type" required
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200 appearance-none
+                                               {{ $errors->has('type') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                        onchange="toggleCustomerTypeFields()">
+                                    <option value="">-- اختر النوع --</option>
+                                    <option value="individual" {{ old('type') == 'individual' ? 'selected' : '' }}>فرد</option>
+                                    <option value="company" {{ old('type') == 'company' ? 'selected' : '' }}>شركة</option>
+                                </select>
+                                @if($errors->has('type'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400 pointer-events-none">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Email -->
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                                البريد الإلكتروني
-                            </label>
-                            <input type="email" id="email" name="email" value="{{ old('email') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('email') border-red-500 @enderror"
-                                   placeholder="example@domain.com">
-                            @error('email')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="email" class="text-sm font-medium text-gray-700">
+                                    البريد الإلكتروني
+                                </label>
+                                @error('email')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('email') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="example@domain.com">
+                                @if($errors->has('email'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Phone -->
                         <div>
-                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                                رقم الهاتف الرئيسي
-                            </label>
-                            <input type="tel" id="phone" name="phone" value="{{ old('phone') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror"
-                                   placeholder="+966 5X XXX XXXX">
-                            @error('phone')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="phone" class="text-sm font-medium text-gray-700">
+                                    رقم الهاتف الرئيسي
+                                </label>
+                                @error('phone')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('phone') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="+966 5X XXX XXXX">
+                                @if($errors->has('phone'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Tax Number -->
                         <div>
-                            <label for="tax_number" class="block text-sm font-medium text-gray-700 mb-2">
-                                الرقم الضريبي
-                            </label>
-                            <input type="text" id="tax_number" name="tax_number" value="{{ old('tax_number') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('tax_number') border-red-500 @enderror"
-                                   placeholder="الرقم الضريبي للعميل">
-                            @error('tax_number')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="tax_number" class="text-sm font-medium text-gray-700">
+                                    الرقم الضريبي
+                                </label>
+                                @error('tax_number')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="tax_number" name="tax_number" value="{{ old('tax_number') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('tax_number') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="الرقم الضريبي للعميل">
+                                @if($errors->has('tax_number'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Commercial Register (for companies) -->
-                        <div id="commercial_register_field" class="hidden">
-                            <label for="commercial_register" class="block text-sm font-medium text-gray-700 mb-2">
-                                رقم السجل التجاري
-                            </label>
-                            <input type="text" id="commercial_register" name="commercial_register" value="{{ old('commercial_register') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('commercial_register') border-red-500 @enderror"
-                                   placeholder="رقم السجل التجاري">
-                            @error('commercial_register')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div id="commercial_register_field" class="{{ old('type') == 'company' ? '' : 'hidden' }}">
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="commercial_register" class="text-sm font-medium text-gray-700">
+                                    رقم السجل التجاري
+                                </label>
+                                @error('commercial_register')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="commercial_register" name="commercial_register" value="{{ old('commercial_register') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('commercial_register') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="رقم السجل التجاري">
+                                @if($errors->has('commercial_register'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Contact Person (for companies) -->
-                        <div id="contact_person_field" class="hidden">
-                            <label for="contact_person" class="block text-sm font-medium text-gray-700 mb-2">
-                                الشخص المسؤول
-                            </label>
-                            <input type="text" id="contact_person" name="contact_person" value="{{ old('contact_person') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('contact_person') border-red-500 @enderror"
-                                   placeholder="اسم الشخص المسؤول">
-                            @error('contact_person')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div id="contact_person_field" class="{{ old('type') == 'company' ? '' : 'hidden' }}">
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="contact_person" class="text-sm font-medium text-gray-700">
+                                    الشخص المسؤول
+                                </label>
+                                @error('contact_person')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="contact_person" name="contact_person" value="{{ old('contact_person') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('contact_person') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="اسم الشخص المسؤول">
+                                @if($errors->has('contact_person'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Address -->
                     <div class="mt-6">
-                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
-                            العنوان
-                        </label>
-                        <textarea id="address" name="address" rows="3"
-                                  class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('address') border-red-500 @enderror"
-                                  placeholder="عنوان العميل الكامل">{{ old('address') }}</textarea>
-                        @error('address')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <div class="flex items-center justify-between mb-2">
+                            <label for="address" class="text-sm font-medium text-gray-700">
+                                العنوان
+                            </label>
+                            @error('address')
+                            <span class="text-xs text-red-600 flex items-center">
+                                <i class="fas fa-exclamation-circle ml-1"></i>
+                                {{ $message }}
+                            </span>
+                            @enderror
+                        </div>
+                        <div class="relative">
+                            <textarea id="address" name="address" rows="3"
+                                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                             {{ $errors->has('address') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                      placeholder="عنوان العميل الكامل">{{ old('address') }}</textarea>
+                            @if($errors->has('address'))
+                                <div class="absolute left-3 top-3 text-red-500">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                            @endif
+                            <div class="absolute left-3 top-3 text-gray-400">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Navigation Buttons for Step 2 -->
                     <div class="flex justify-between mt-8 pt-6 border-t">
-                        <button type="button" onclick="prevStep()" class="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <button type="button" onclick="prevStep()" class="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-arrow-right ml-2"></i>
                             السابق
                         </button>
-                        <button type="button" onclick="nextStep()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+                        <button type="button" onclick="nextStep()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 font-medium transition duration-200">
                             <i class="fas fa-arrow-left ml-2"></i>
                             التالي: معلومات إضافية
                         </button>
@@ -301,82 +464,162 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Website -->
                         <div>
-                            <label for="website" class="block text-sm font-medium text-gray-700 mb-2">
-                                الموقع الإلكتروني
-                            </label>
-                            <input type="url" id="website" name="website" value="{{ old('website') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('website') border-red-500 @enderror"
-                                   placeholder="https://example.com">
-                            @error('website')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="website" class="text-sm font-medium text-gray-700">
+                                    الموقع الإلكتروني
+                                </label>
+                                @error('website')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="url" id="website" name="website" value="{{ old('website') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('website') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="https://example.com">
+                                @if($errors->has('website'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-globe"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Contact Person Phone -->
-                        <div id="contact_person_phone_field" class="hidden">
-                            <label for="contact_person_phone" class="block text-sm font-medium text-gray-700 mb-2">
-                                هاتف الشخص المسؤول
-                            </label>
-                            <input type="tel" id="contact_person_phone" name="contact_person_phone" value="{{ old('contact_person_phone') }}"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('contact_person_phone') border-red-500 @enderror"
-                                   placeholder="+966 5X XXX XXXX">
-                            @error('contact_person_phone')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div id="contact_person_phone_field" class="{{ old('type') == 'company' ? '' : 'hidden' }}">
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="contact_person_phone" class="text-sm font-medium text-gray-700">
+                                    هاتف الشخص المسؤول
+                                </label>
+                                @error('contact_person_phone')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="tel" id="contact_person_phone" name="contact_person_phone" value="{{ old('contact_person_phone') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('contact_person_phone') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="+966 5X XXX XXXX">
+                                @if($errors->has('contact_person_phone'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Payment Terms -->
                         <div>
-                            <label for="payment_terms" class="block text-sm font-medium text-gray-700 mb-2">
-                                شروط الدفع الافتراضية
-                            </label>
-                            <select id="payment_terms" name="payment_terms"
-                                    class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('payment_terms') border-red-500 @enderror">
-                                <option value="">-- اختر شروط الدفع --</option>
-                                <option value="net_30" {{ old('payment_terms') == 'net_30' ? 'selected' : '' }}>30 يوم صافي</option>
-                                <option value="net_15" {{ old('payment_terms') == 'net_15' ? 'selected' : '' }}>15 يوم صافي</option>
-                                <option value="due_on_receipt" {{ old('payment_terms') == 'due_on_receipt' ? 'selected' : '' }}>نقداً عند الاستلام</option>
-                                <option value="custom" {{ old('payment_terms') == 'custom' ? 'selected' : '' }}>مخصص</option>
-                            </select>
-                            @error('payment_terms')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="payment_terms" class="text-sm font-medium text-gray-700">
+                                    شروط الدفع الافتراضية
+                                </label>
+                                @error('payment_terms')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <select id="payment_terms" name="payment_terms"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200 appearance-none
+                                               {{ $errors->has('payment_terms') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}">
+                                    <option value="">-- اختر شروط الدفع --</option>
+                                    <option value="net_30" {{ old('payment_terms') == 'net_30' ? 'selected' : '' }}>30 يوم صافي</option>
+                                    <option value="net_15" {{ old('payment_terms') == 'net_15' ? 'selected' : '' }}>15 يوم صافي</option>
+                                    <option value="due_on_receipt" {{ old('payment_terms') == 'due_on_receipt' ? 'selected' : '' }}>نقداً عند الاستلام</option>
+                                    <option value="custom" {{ old('payment_terms') == 'custom' ? 'selected' : '' }}>مخصص</option>
+                                </select>
+                                @if($errors->has('payment_terms'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400 pointer-events-none">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Credit Limit -->
                         <div>
-                            <label for="credit_limit" class="block text-sm font-medium text-gray-700 mb-2">
-                                الحد الائتماني (ر.س)
-                            </label>
-                            <input type="number" id="credit_limit" name="credit_limit" value="{{ old('credit_limit') }}" step="0.01" min="0"
-                                   class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('credit_limit') border-red-500 @enderror"
-                                   placeholder="0.00">
-                            @error('credit_limit')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="credit_limit" class="text-sm font-medium text-gray-700">
+                                    الحد الائتماني (ر.س)
+                                </label>
+                                @error('credit_limit')
+                                <span class="text-xs text-red-600 flex items-center">
+                                    <i class="fas fa-exclamation-circle ml-1"></i>
+                                    {{ $message }}
+                                </span>
+                                @enderror
+                            </div>
+                            <div class="relative">
+                                <input type="number" id="credit_limit" name="credit_limit" value="{{ old('credit_limit') }}" step="0.01" min="0"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                              {{ $errors->has('credit_limit') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                       placeholder="0.00">
+                                @if($errors->has('credit_limit'))
+                                    <div class="absolute left-3 top-3.5 text-red-500">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                @endif
+                                <div class="absolute left-3 top-3.5 text-gray-400">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Notes -->
                     <div class="mt-6">
-                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-                            ملاحظات
-                        </label>
-                        <textarea id="notes" name="notes" rows="4"
-                                  class="w-full border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('notes') border-red-500 @enderror"
-                                  placeholder="ملاحظات إضافية عن العميل">{{ old('notes') }}</textarea>
-                        @error('notes')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <div class="flex items-center justify-between mb-2">
+                            <label for="notes" class="text-sm font-medium text-gray-700">
+                                ملاحظات
+                            </label>
+                            @error('notes')
+                            <span class="text-xs text-red-600 flex items-center">
+                                <i class="fas fa-exclamation-circle ml-1"></i>
+                                {{ $message }}
+                            </span>
+                            @enderror
+                        </div>
+                        <div class="relative">
+                            <textarea id="notes" name="notes" rows="4"
+                                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition duration-200
+                                             {{ $errors->has('notes') ? 'border-red-500 bg-red-50' : 'border-gray-300' }}"
+                                      placeholder="ملاحظات إضافية عن العميل">{{ old('notes') }}</textarea>
+                            @if($errors->has('notes'))
+                                <div class="absolute left-3 top-3 text-red-500">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                            @endif
+                            <div class="absolute left-3 top-3 text-gray-400">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Navigation Buttons for Step 3 -->
                     <div class="flex justify-between mt-8 pt-6 border-t">
-                        <button type="button" onclick="prevStep()" class="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <button type="button" onclick="prevStep()" class="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-arrow-right ml-2"></i>
                             السابق
                         </button>
-                        <button type="button" onclick="nextStep()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 font-medium">
+                        <button type="button" onclick="nextStep()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 font-medium transition duration-200">
                             <i class="fas fa-arrow-left ml-2"></i>
                             التالي: مراجعة المعلومات
                         </button>
@@ -471,12 +714,12 @@
 
                     <!-- Form Actions -->
                     <div class="flex justify-between pt-6 border-t">
-                        <button type="button" onclick="prevStep()" class="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <button type="button" onclick="prevStep()" class="px-6 py-3 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200">
                             <i class="fas fa-arrow-right ml-2"></i>
                             السابق
                         </button>
                         <div class="flex space-x-3 space-x-reverse">
-                            <button type="submit" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-medium">
+                            <button type="submit" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-medium transition duration-200">
                                 <i class="fas fa-save ml-2"></i>
                                 حفظ العميل
                             </button>
@@ -506,12 +749,38 @@
         .step-progress {
             transition: all 0.3s ease;
         }
+
+        /* Shake animation for errors */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Error focus style */
+        .error-focus {
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
     </style>
 @endpush
 
 @push('scripts')
     <script>
-        let currentStep = 1;
+        let currentStep = {{ old('company_id') ? 2 : 1 }};
         const companies = @json($companies->keyBy('id')->toArray());
 
         function selectCompany(companyId) {
@@ -527,6 +796,13 @@
             if (selectedCard) {
                 selectedCard.classList.add('active', 'tenant-badge');
                 selectedCard.querySelector('input[type="radio"]').checked = true;
+
+                // Remove error styling
+                selectedCard.classList.remove('border-red-300');
+
+                // Remove any error message for company_id
+                const errorElements = document.querySelectorAll('[data-field="company_id"]');
+                errorElements.forEach(el => el.remove());
             }
         }
 
@@ -589,54 +865,71 @@
                 case 1:
                     const selectedCompany = document.querySelector('input[name="company_id"]:checked');
                     if (!selectedCompany) {
-                        showNotification('يرجى اختيار شركة', 'error');
+                        showFieldError('company_id', 'يرجى اختيار شركة');
                         isValid = false;
                     }
                     break;
 
                 case 2:
-                    const name = document.getElementById('name');
-                    const type = document.getElementById('type');
+                    const requiredFields = [
+                        { id: 'name', message: 'يرجى إدخال اسم العميل' },
+                        { id: 'type', message: 'يرجى اختيار نوع العميل' }
+                    ];
 
-                    if (!name.value.trim()) {
-                        showError(name, 'يرجى إدخال اسم العميل');
-                        isValid = false;
-                    }
-
-                    if (!type.value) {
-                        showError(type, 'يرجى اختيار نوع العميل');
-                        isValid = false;
-                    }
+                    requiredFields.forEach(field => {
+                        const element = document.getElementById(field.id);
+                        if (!element.value.trim()) {
+                            showFieldError(field.id, field.message);
+                            isValid = false;
+                        }
+                    });
                     break;
             }
 
             return isValid;
         }
 
-        function showError(element, message) {
-            // Remove existing error
-            const existingError = element.parentElement.querySelector('.text-red-600');
-            if (existingError) existingError.remove();
+        function showFieldError(fieldId, message) {
+            // Remove existing error for this field
+            removeFieldError(fieldId);
 
-            // Add error class to input
-            element.classList.add('border-red-500');
+            const element = document.getElementById(fieldId);
+            if (!element) return;
 
-            // Create error message
-            const errorElement = document.createElement('p');
-            errorElement.className = 'mt-2 text-sm text-red-600';
-            errorElement.textContent = message;
+            // Add error styling
+            element.classList.add('border-red-500', 'bg-red-50', 'error-focus', 'shake');
+
+            // Create error message element
+            const errorElement = document.createElement('div');
+            errorElement.className = 'mt-2 text-sm text-red-600 flex items-center animate-fade-in';
+            errorElement.setAttribute('data-field', fieldId);
+            errorElement.innerHTML = `
+                <i class="fas fa-exclamation-circle ml-2"></i>
+                ${message}
+            `;
+
+            // Insert error message after the input
             element.parentElement.appendChild(errorElement);
 
-            // Scroll to error
+            // Scroll to the error
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            // Auto-remove error when user starts typing
+            // Auto-remove error when user interacts
             element.addEventListener('input', function() {
-                this.classList.remove('border-red-500');
-                if (errorElement.parentElement) {
-                    errorElement.remove();
-                }
+                removeFieldError(fieldId);
             }, { once: true });
+        }
+
+        function removeFieldError(fieldId) {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.classList.remove('border-red-500', 'bg-red-50', 'error-focus', 'shake');
+            }
+
+            const errorElement = document.querySelector(`[data-field="${fieldId}"]`);
+            if (errorElement) {
+                errorElement.remove();
+            }
         }
 
         function updateProgressIndicator() {
@@ -727,10 +1020,12 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize company selection
+            // Initialize company selection if there was an error
             const checkedCompany = document.querySelector('input[name="company_id"]:checked');
             if (checkedCompany) {
                 selectCompany(checkedCompany.value);
+            } else if (@json($activeCompanyId)) {
+                selectCompany(@json($activeCompanyId));
             }
 
             // Initialize customer type fields
@@ -739,19 +1034,35 @@
             // Update progress indicator
             updateProgressIndicator();
 
-            // Auto-select active company if no company is selected
-            if (!checkedCompany) {
-                const activeCompanyId = @json($activeCompanyId);
-                if (activeCompanyId) {
-                    selectCompany(activeCompanyId);
-                }
+            // Highlight fields with errors on load
+            @if($errors->any())
+            // Show error summary
+            const errorSummary = document.querySelector('.bg-red-50');
+            if (errorSummary) {
+                errorSummary.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-        });
 
-        // Helper function to show notifications
-        function showNotification(message, type = 'info') {
-            // Implementation depends on your notification system
-            alert(message); // Replace with your notification system
-        }
+            // Navigate to step with error
+            @if($errors->has('company_id'))
+                currentStep = 1;
+            @else
+                currentStep = 2;
+            @endif
+
+            // Hide all steps except current
+            [1,2,3,4].forEach(step => {
+                const stepEl = document.getElementById(`step${step}`);
+                if (stepEl) {
+                    if (step === currentStep) {
+                        stepEl.classList.remove('hidden');
+                    } else {
+                        stepEl.classList.add('hidden');
+                    }
+                }
+            });
+
+            updateProgressIndicator();
+            @endif
+        });
     </script>
 @endpush

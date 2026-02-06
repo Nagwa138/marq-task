@@ -41,7 +41,9 @@ class InvoiceController extends Controller
         $data = $this->invoiceService->getCreateData();
 
         $companies = $this->companyService->all();
-        return view('invoices.create', compact('data', 'companies'));
+
+        $activeCompanyId = session('activeCompanyId') ?? null;
+        return view('invoices.create', compact('data', 'companies', 'activeCompanyId'));
     }
 
     /**
