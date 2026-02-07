@@ -3,6 +3,7 @@
 namespace App\Architecture\Repositories\Classes;
 
 use App\Architecture\Repositories\AbstractRepository;
+use App\Architecture\Services\Classes\InvoiceService;
 use App\Models\Invoice;
 use App\Architecture\Repositories\Interfaces\IInvoiceRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -10,9 +11,122 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceRepository extends AbstractRepository implements IInvoiceRepository
 {
+    public function find(int $id): ?Invoice
+    {
+        return $this->first(['id' => $id]);
+    }
+
+    public function findWithRelations(int $id): ?Invoice
+    {
+        return $this->prepareQuery()->with([
+            'company',
+            'customer',
+            'items',
+            'payments' => function ($query) {
+                $query->orderBy('created_at', 'desc');
+            }
+        ])->find($id);
+    }
+
+    public function getInvoiceForPrint(int $id): ?Invoice
+    {
+        return $this->prepareQuery()->with([
+            'company' => function ($query) {
+                $query->select(['id', 'name', 'email', 'phone', 'address', 'logo', 'tax_number']);
+            },
+            'customer' => function ($query) {
+                $query->select(['id', 'name', 'email', 'phone', 'address', 'tax_number']);
+            },
+            'items'
+        ])->find($id);
+    }
+
+    public function markAsSent(int $id): bool
+    {
+        $invoice = $this->find($id);
+
+        if (!$invoice) {
+            return false;
+        }
+
+        return $invoice->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+    }
+
+    public function markAsPaid(int $id): bool
+    {
+        $invoice = $this->find($id);
+
+        if (!$invoice) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($invoice) {
+            $result = $invoice->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+            ]);
+
+            // If there are outstanding payments, mark them as completed
+            if ($result) {
+                $invoice->payments()
+                    ->where('status', 'pending')
+                    ->update(['status' => 'completed']);
+            }
+
+            return $result;
+        });
+    }
+
+    public function duplicate(int $id): ?Invoice
+    {
+        return DB::transaction(function () use ($id) {
+            $originalInvoice = $this->findWithRelations($id);
+
+            if (!$originalInvoice) {
+                return null;
+            }
+
+            // Duplicate invoice
+            $newInvoice = $originalInvoice->replicate();
+            $newInvoice->invoice_number = self::generateInvoiceNumber();
+            $newInvoice->status = 'draft';
+            $newInvoice->issue_date = now();
+            $newInvoice->due_date = now()->addDays($originalInvoice->customer->payment_terms_days ?? 30);
+            $newInvoice->sent_at = null;
+            $newInvoice->paid_at = null;
+            $newInvoice->save();
+
+            // Duplicate invoice items
+            foreach ($originalInvoice->items as $item) {
+                $newItem = $item->replicate();
+                $newItem->invoice_id = $newInvoice->id;
+                $newItem->save();
+            }
+
+            return $newInvoice->load(['customer', 'company', 'items']);
+        });
+    }
+
+    public function getRelatedInvoices(int $customerId, int $excludeId = null)
+    {
+        $query = $this->model->where('customer_id', $customerId)
+            ->with(['company'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5);
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->get();
+    }
+
     public function all(array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
-        $query = Invoice::query();
+        $query = $this->prepareQuery();
 
         return $this->applyFilters($query, $filters)->get();
     }
@@ -27,19 +141,9 @@ class InvoiceRepository extends AbstractRepository implements IInvoiceRepository
             ->withQueryString();
     }
 
-    public function find(int $id): ?Invoice
-    {
-        return Invoice::find($id);
-    }
-
-    public function create(array $data): Invoice
-    {
-        return Invoice::create($data);
-    }
-
     public function withRelations(int $id): ?Invoice
     {
-        return Invoice::with(['customer', 'company', 'items'])
+        return $this->prepareQuery()->with(['customer', 'company', 'items'])
             ->where('id', $id)
             ->first();
     }
