@@ -531,6 +531,7 @@
 </footer>
 
 <!-- JavaScript -->
+
 <script>
     // Mobile Menu Functionality
     const mobileMenuButton = document.getElementById('mobileMenuButton');
@@ -631,22 +632,23 @@
         document.querySelectorAll('.card-hover').forEach(card => {
             observer.observe(card);
         });
-    });
 
-    // Add loading state to buttons
-    document.querySelectorAll('a[href="{{ route(\'register\') }}"]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            const originalHtml = this.innerHTML;
-            this.innerHTML = `
-                <div class="loader" style="border-width: 2px; width: 20px; height: 20px; margin-left: 8px;"></div>
-                <span>جاري التوجيه...</span>
-            `;
-            this.style.pointerEvents = 'none';
+        // Add loading state to register buttons
+        const registerButtons = document.querySelectorAll('a[href="{{ route('register') }}"]');
+        registerButtons.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const originalHtml = this.innerHTML;
+                this.innerHTML = `
+                    <div class="loader" style="border-width: 2px; width: 20px; height: 20px; margin-left: 8px;"></div>
+                    <span>جاري التوجيه...</span>
+                `;
+                this.style.pointerEvents = 'none';
 
-            setTimeout(() => {
-                this.innerHTML = originalHtml;
-                this.style.pointerEvents = '';
-            }, 2000);
+                setTimeout(() => {
+                    this.innerHTML = originalHtml;
+                    this.style.pointerEvents = '';
+                }, 2000);
+            });
         });
     });
 
